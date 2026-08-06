@@ -222,33 +222,66 @@ The following components will be designed and documented throughout the project.
 
 ## Navigation
 
-- Navbar
-- Mobile Navigation
-- Sticky Navigation
-- Navigation Links
-- CTA Navigation
+### Navbar ✅ Built — `website/components/layout/Navbar.tsx`
+
+**Purpose:** Single unified site navigation, replacing the live site's two-layer header (contact bar + nav) that the Docs PDF flagged for adding unnecessary height and burying the logo.
+
+**Usage:** Rendered once, in `app/layout.tsx`, so every route inherits it automatically. Never import it directly into a page.
+
+**Structure:** `Lyftek` wordmark (left) — primary links (center-right, desktop only) — primary CTA button (right, desktop only) — mobile menu toggle (right, replaces links+CTA below the `lg` breakpoint). Content constrained to the standard 1280px container from `06_LAYOUT_AND_SPACING.md`.
+
+**Variants:** None yet — one navbar for the whole site. If a page ever needs a transparent/hero-blended variant, extend via props rather than forking the component.
+
+**States:**
+- Default (top of page): transparent border, solid background, no blur.
+- Scrolled (`scrollY > 8px`): border + `backdrop-blur-md` fade in via CSS transition — reinforces orientation without being decorative.
+- Active link: `aria-current="page"`, full-opacity text vs. `foreground-secondary` for inactive links.
+- Mobile menu open/closed: toggled by a Phosphor `List`/`X` icon button with `aria-expanded`/`aria-controls`.
+- Focus: visible `focus-visible` ring (accent color) on every interactive element.
+
+**Responsive:** `lg` (1024px) breakpoint splits desktop (inline links + CTA) from mobile (hamburger → slide-down panel with the same links + full-width CTA). Chosen over the more common `md` breakpoint because 6 nav items + CTA + logo felt cramped in the 768–1023px tablet range during review.
+
+**Accessibility:** Skip-to-content link (targets `#main-content` — every page's top-level landmark must carry that id), semantic `<header>`/`<nav aria-label="Primary|Mobile">`, `aria-current` on the active link, Escape closes the mobile menu, menu also resets on route change, all interactive elements keyboard-reachable with visible focus rings.
+
+**Motion:** Mobile menu open/close is a Framer Motion height/opacity transition (`duration: 0.2s`), skipped entirely (`duration: 0`) when `useReducedMotion()` reports a preference for reduced motion. Scroll-elevation and link hover states are plain CSS transitions (color/background/border/blur only — no layout-affecting properties), per `13_MOTION_AND_ANIMATION.md`'s performance rules.
+
+**Implementation notes:** Nav items + CTA live in `constants/navigation.ts` (data), not hardcoded in the component — changing the sitemap means editing one array. Uses the shared `Button` component (see Buttons section below) rather than one-off button markup. Logo is currently a **text wordmark**, not an image — no Lyftek logo asset has been supplied to any Claude session yet; swap it for a real `<Image>` logo as soon as brand assets exist, in `components/layout/Navbar.tsx`.
+
+- Mobile Navigation — built as part of Navbar above, not a separate component.
+- Sticky Navigation — built as part of Navbar above (`position: sticky`).
+- Navigation Links — built as part of Navbar above.
+- CTA Navigation — built as part of Navbar above, via the shared `Button` component.
 
 ---
 
-## Hero
+## Hero ✅ Built (v1) — `website/components/sections/Hero.tsx`
 
-- Hero Layout
-- Headlines
-- Supporting Text
-- CTA Area
-- Visual Area
-- Trust Signals
+**Purpose:** first thing every visitor sees; must communicate what Lyftek does and why it's trustworthy within a few seconds (01_PROJECT_CONTEXT.md).
+
+**Structure:** centered single column, eyebrow label → H1 → supporting subhead → primary+secondary CTA row → small trust caption. Constrained to the standard 1280px container. No two-column split, no hero image/illustration/video.
+
+**Copy decisions (subject to content review, not final copy sign-off):**
+- Headline: "Engineering **technology** businesses can trust." — deliberately broader than the Docs PDF's suggested "AI era" framing, because 02_BRAND_GUIDELINES.md explicitly warns against positioning Lyftek as AI-first ("This company is building for the future," not "this company only does AI").
+- Subhead: short fragment style ("Custom software, AI, cloud, and cybersecurity — engineered for businesses that need to get it right"), matching the PDF's own critique that the original subhead read like a tech-stack list instead of answering "how will you help my business."
+- Primary CTA "Book a Consultation" reuses the exact Navbar CTA (same destination, `/contact`) rather than introducing new wording — one consistent action across the site.
+- Secondary CTA "Explore Our Services" → `/services` — this was the *original* site's sole hero CTA; kept, just demoted to secondary now that a stronger primary exists.
+- Trust caption: the ISO 9001:2015 / ISO/IEC 27001:2022 certification line still appears, but as small muted text below the CTAs, not a bordered badge competing with the headline (direct fix for the PDF's "competes with the main message" critique).
+
+**Visual Area:** intentionally empty of imagery. No product screenshots, dashboards, or illustrations exist yet, and fabricating a stand-in graphic would misrepresent the product (see 04_VISUAL_LANGUAGE.md's warning against "generic marketing illustrations" and the project-wide "never fabricate information" rule). In their place: a static, very-low-opacity 64px grid texture (masked to fade toward the bottom) plus a soft accent-tinted radial gradient behind the headline — both restrained enough to avoid the "glowing UI" / "blurred glow orb" pattern 04_VISUAL_LANGUAGE.md explicitly bans. Revisit this once real product/case-study visuals exist.
+
+**Motion:** entrance is a staggered fade+rise (eyebrow → headline → subhead → CTAs → trust line, 0.08s stagger, 0.5s ease-out per element), skipped entirely via `useReducedMotion()` when the user prefers reduced motion. No background motion, no looping animation, no parallax — matches 13_MOTION_AND_ANIMATION.md's "Hero Animation" guidance (progressive reveal, not a cinematic intro).
+
+**Not built yet:** a dedicated Trust/Certifications section (the PDF explicitly recommended moving the ISO badge out of the hero into its own section — that section itself doesn't exist yet, the hero just no longer crowds it in). A real visual/proof element for the hero once product assets exist.
 
 ---
 
 ## Buttons
 
-- Primary
-- Secondary
-- Outline
-- Ghost
-- Icon Button
-- Link Button
+### Button 🔶 Partially built — `website/components/ui/Button.tsx`
+
+Built now: `primary` (solid accent, e.g. nav CTA) and `ghost` (used for the mobile menu icon toggle), plus `outline`. Sizes: `md` (default) and `icon` (square, for icon-only buttons). Renders as a Next.js `Link` when given an `href`, otherwise a native `<button>`.
+
+Not built yet: `Secondary` variant, and full HTML-attribute passthrough (currently a deliberately minimal prop surface — `onClick`, `type`, `aria-*` — extend it when a real use case needs more, rather than speculatively). `Link Button` (text-only, no background) also not built yet — first real need for it will define its API.
 
 ---
 
