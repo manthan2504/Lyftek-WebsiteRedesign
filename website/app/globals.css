@@ -39,6 +39,16 @@
   --font-sans: var(--font-body);
   --font-heading: var(--font-ibm-plex-sans);
   --font-mono: var(--font-geist-mono);
+  /*
+   * Switzer -- loaded via Fontshare's API in app/layout.tsx (external CDN,
+   * not next/font-hosted -- see that file's comment for why). Deliberately
+   * a THIRD typeface, not folded into --font-heading: scoped to the Hero
+   * H1 specifically (`font-switzer`), not the sitewide heading font. Same
+   * fallback stack Fulcrum's own CSS uses (confirmed via direct DOM
+   * inspection), so if Switzer fails to load the fallback still lands on a
+   * similar grotesk rather than an arbitrary default.
+   */
+  --font-switzer: "Switzer", "Helvetica Neue", Arial, sans-serif;
 
   /* Semantic color tokens -- resolved per-theme below */
   --color-background: var(--background);
@@ -92,9 +102,24 @@
   --foreground-muted: #94a3b8;
 
   --accent: #cdfc8a; /* light lime accent */
-  --accent-foreground: #022e21; /* deep teal, used as text-on-accent / primary accent surface */
-  --accent-hover: #034a35;
-  --accent-surface: #10392d;
+  --accent-foreground: #022e21; /* deep teal, dark text sitting ON the light lime accent (buttons) -- untouched, contrast against lime was never the problem */
+  /*
+   * accent-hover / accent-surface used to sit in the same near-black teal
+   * range as accent-foreground (#034a35 / #10392d) -- fine as text-on-lime,
+   * but both are also rendered as standalone colors directly against the
+   * near-black panel/background (Button.tsx's hover state, Hero.tsx's
+   * background glow), where a color that dark reads as "just went dark,"
+   * not as a color. Client: "teal green is not looking good at black
+   * background... find a perfect pair with lime, must be from the green
+   * family." Kept in the same blue-shifted teal-green hue family (still
+   * clearly distinct from lime's yellow-green, so they don't collide) but
+   * raised in value/saturation enough to actually read against #0a0a0a /
+   * #1d1d1d. --accent-surface is brighter still since Hero.tsx applies it
+   * under ~30% opacity -- a dim base color would vanish entirely once
+   * that opacity is applied.
+   */
+  --accent-hover: #0f9c7f; /* jade -- button hover background */
+  --accent-surface: #14b8a6; /* brighter teal-500 -- hero background glow tint, needs headroom for its own low-opacity use */
 
   --success: #22c55e;
   --warning: #f59e0b;

@@ -2,7 +2,16 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
+import { Threads } from "@/components/ui/Threads";
 import { DASHBOARD_CONTAINER } from "@/constants/layout";
+
+// Jade -- the same `--accent-hover` token introduced for the CTA's hover
+// state earlier in this session (#0f9c7f), normalized to [0-1] floats for
+// the WebGL shader. Kept as one shared secondary color across the button
+// and the background rather than a third, unrelated color.
+const THREADS_COLOR: [number, number, number] = [
+  0.058823529411764705, 0.611764705882353, 0.4980392156862745,
+];
 
 const container = {
   hidden: {},
@@ -28,21 +37,58 @@ const item = {
  * Lyftek does and why it can be trusted within a few seconds
  * (01_PROJECT_CONTEXT.md).
  *
- * Copy follows Docs/Mythoughts.md's Hero Section recommendations directly
- * (headline and subheadline are the client's own wording, not a paraphrase
- * -- see claudeContextExchange.md for the earlier draft that deviated from
- * this and why that was wrong).
+ * Copy follows Docs/content_writing.md's principles and the client's
+ * explicit direction: "Technology should remove complexity." is the bold
+ * primary claim; "We engineer businesses for the AI era." (the client's
+ * original headline from Mythoughts.md) is plain supporting text below it,
+ * followed by a second line ("One partner. Not multiple vendors.") added
+ * per content_writing.md's "speak to business outcomes rather than
+ * technologies" principle -- a consolidation/simplicity value prop (a real
+ * enterprise pain: coordinating multiple vendors), not a second restatement
+ * of "we do AI," kept deliberately as short as the line above it, and
+ * deliberately not naming a specific number (an earlier draft said "not
+ * five vendors" -- the client asked for a general word instead). Single
+ * CTA ("Talk to Our Team" +
+ * "30 minutes. No sales pitch."), replacing two earlier competing CTAs.
+ * See claudeContextExchange.md for the full content deliverable this
+ * came from.
  *
- * Layout: a wide (1440px) "dashboard" panel -- see DASHBOARD_CONTAINER --
- * the exact same width as Navbar's own box, so the panel's dark/grid
- * background is visible extending above and below the independently-
- * floating Navbar (Navbar is NOT fused to this panel; see Navbar.tsx's
- * docblock and app/page.tsx's negative-margin pull-up). No corner brackets
- * here -- that accent treatment belongs to Navbar only. Inner content uses
- * the same px-6/md:px-8 horizontal padding as Navbar's own inner row (not a
- * separately-centered narrower column), so the headline's left edge lines
- * up exactly with the "Lyftek" wordmark above it. Text is left-aligned, not
- * centered.
+ * STRUCTURE -- rebuilt to match fulcrumlabs.pro's actual hero technique
+ * (studied directly via DOM/computed-style inspection, not guessed), not
+ * the two-column side-by-side layout this section used previously:
+ * - Single near-full-width text column (no grid split). Fulcrum's own text
+ *   container is ~91% of its hero width; this section's DASHBOARD_CONTAINER
+ *   math already lands in the same range without adjustment.
+ * - Headline: uppercase, font-extrabold (800), set in Switzer (`font-switzer`
+ *   -- loaded via Fontshare's API in app/layout.tsx, see that file's
+ *   comment) -- the client's explicit direction after seeing Fulcrum's own
+ *   150px/800-weight/uppercase treatment, overriding an earlier draft that
+ *   deliberately kept this mixed-case per 02_BRAND_GUIDELINES.md's "looks
+ *   like an AI startup" litmus test. That guidance still stands as a
+ *   general principle; this is a specific, explicit client override for
+ *   this one headline, not a reversal of the principle itself. Switzer is
+ *   scoped to this H1 only -- `font-heading` (IBM Plex Sans) remains the
+ *   sitewide heading font everywhere else (Navbar wordmark, future H2s).
+ * - Headline is 3 stacked lines ("Technology" / "should remove" /
+ *   "complexity.") rather than wrapping naturally, per explicit client
+ *   layout direction, with the illustration positioned beside the middle
+ *   line / behind the third -- not Fulcrum's own far-right placement.
+ * - Background: previously a static brand-mark illustration (HeroBackdrop,
+ *   now removed) plus a static grid texture + radial gradient. Replaced,
+ *   per explicit client direction, with an animated WebGL "Threads"
+ *   background (components/ui/Threads.tsx, React Bits --
+ *   14_DESIGN_AND_DEVELOPMENT_RESOURCES.md's preferred UI libraries list).
+ *   This DELIBERATELY REVERSES the hero's earlier "complete staticcccc...
+ *   nothing moving" decision from earlier in this engagement -- that
+ *   reversal was surfaced and confirmed with the client before building it,
+ *   not assumed. See Threads.tsx's own docblock for the reduced-motion
+ *   handling, which this file gates (below).
+ * - Per-character split-text entrance (which Fulcrum uses) was considered
+ *   and rejected: 13_MOTION_AND_ANIMATION.md warns against motion that
+ *   feels "exaggerated" or like a "cinematic intro," and per-glyph
+ *   animation reads as a creative-agency signature move, not an enterprise
+ *   consulting one. The existing element-level stagger (below) already
+ *   satisfies the doc's "staggered typography" guidance at the right grain.
  *
  * Deliberately excludes:
  * - Background video: Mythoughts.md itself questions its value (Lyftek
@@ -50,21 +96,24 @@ const item = {
  *   treatments instead -- which is what's below.
  * - The ISO certification badge: Mythoughts.md says move it into its own
  *   dedicated Trusted By / Certifications section, not keep any version of
- *   it in the hero. That section doesn't exist yet -- the badge is simply
- *   absent from the homepage until it's built, rather than left here in a
- *   softened form.
- * - Any illustration, mockup, or dashboard graphic: no real product
- *   screenshots or brand imagery exist yet. Fabricating a stand-in would
- *   misrepresent the product (04_VISUAL_LANGUAGE.md's warning against
- *   "generic marketing illustrations").
- * - Continuous/looping background motion: researched directly against
- *   Stripe/Vercel/Linear vs. IBM/Microsoft/Anthropic/Apple precedent.
- *   Continuous ambient motion (drifting gradients, particles) is a
- *   developer-tool/PLG-startup genre convention that signals "we move
- *   fast" -- the wrong register for a firm CTOs are vetting for a
- *   multi-year engagement. Static reads as stability; the one-time text
- *   entrance below carries the hero's entire motion budget, same logic
- *   Apple uses (motion as one-time polish, then stillness).
+ *   it in the hero. That section doesn't exist yet.
+ * - Any product mockup, dashboard graphic, or screenshot: no real product
+ *   screenshots exist yet. Fabricating a stand-in would misrepresent the
+ *   product (04_VISUAL_LANGUAGE.md's warning against "generic marketing
+ *   illustrations").
+ * - Scroll-linked background motion specifically: Fulcrum's own hero
+ *   illustration uses scroll-linked parallax, considered and rejected
+ *   earlier in this engagement, and that rejection still stands -- the
+ *   Threads background (see above) is continuous/ambient, not scroll-driven,
+ *   which is a narrower, later, and separate decision from that one.
+ *
+ * MOTION BUDGET NOTE: with the Threads background now continuous rather
+ * than static, this hero no longer follows the "one-time entrance, then
+ * total stillness" model described in earlier session notes -- that was
+ * accurate for the previous build, not the current one. The text stagger
+ * below is unchanged; the background is the one exception to stillness now,
+ * and it is skipped entirely under `prefers-reduced-motion` (see the
+ * `prefersReducedMotion` check around the `<Threads>` render below).
  */
 export function Hero() {
   const prefersReducedMotion = useReducedMotion();
@@ -74,77 +123,89 @@ export function Hero() {
       className={`bg-panel relative overflow-hidden ${DASHBOARD_CONTAINER}`}
     >
       {/*
-        Restrained background texture: a faint 64px grid (reads as
-        "engineered", not decorative) fading out via a radial mask, plus a
-        soft accent-tinted radial gradient behind the headline. Both are
-        static -- no motion, no blurred glow orbs, which 04_VISUAL_LANGUAGE.md
-        explicitly bans regardless of intensity. Implemented as inline
-        styles rather than Tailwind arbitrary-value classes because encoding
-        this much raw CSS in bracket syntax hurt readability more than the
-        inline style costs -- see 17_CODING_STANDARDS.md's "avoid arbitrary
-        values unless justified."
+        Threads (WebGL, continuous) replaces the old static grid + radial
+        gradient. Skipped entirely under prefers-reduced-motion rather than
+        rendered-but-paused -- the component has no built-in reduced-motion
+        handling (see Threads.tsx docblock), and a canvas that's present but
+        inert is still a WebGL context doing nothing useful, not a real
+        accessibility fallback. The fallback here is the plain --color-panel
+        background the section already sits on.
+
+        NO explicit z-index here (not `-z-10`) -- deliberately DOM-order
+        stacking instead, same mechanism this file's old HeroBackdrop
+        illustration relied on (see git history / claudeContextExchange.md).
+        `<section>` doesn't itself establish a stacking context (no z-index
+        of its own, only `position: relative`), so a negative z-index child
+        can escape it and paint behind an ancestor further up the tree
+        instead of just behind this section's own later siblings --
+        confirmed this was actually happening (canvas present, correctly
+        sized, WebGL context healthy, zero GL errors, but nothing visible)
+        before switching to this. Rendered FIRST in the JSX, before the text
+        block, so normal auto-z-index stacking puts it behind the text.
       */}
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 opacity-15"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, var(--color-panel-border) 1px, transparent 1px), linear-gradient(to bottom, var(--color-panel-border) 1px, transparent 1px)",
-          backgroundSize: "64px 64px",
-          maskImage: "radial-gradient(ellipse at top, black, transparent 70%)",
-          WebkitMaskImage:
-            "radial-gradient(ellipse at top, black, transparent 70%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 opacity-30"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 45% at 50% 0%, var(--color-accent-surface), transparent 60%)",
-        }}
-      />
+      {!prefersReducedMotion && (
+        <div aria-hidden className="absolute inset-0">
+          <Threads
+            color={THREADS_COLOR}
+            amplitude={1.1}
+            distance={0}
+            enableMouseInteraction
+          />
+        </div>
+      )}
 
-      <motion.div
-        initial={prefersReducedMotion ? false : "hidden"}
-        animate="visible"
-        variants={container}
-        className="flex flex-col items-start px-6 pt-40 pb-16 text-left md:px-8 md:pt-44 md:pb-20 lg:pt-48 lg:pb-24"
-      >
-        <motion.p
-          variants={item}
-          className="text-foreground-muted font-mono text-xs font-medium tracking-[0.2em] uppercase"
-        >
-          Enterprise Technology Partner
-        </motion.p>
-
-        <motion.h1
-          variants={item}
-          className="font-heading text-foreground mt-6 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl"
-        >
-          We engineer businesses for the{" "}
-          <span className="text-accent">AI era</span>.
-        </motion.h1>
-
-        <motion.p
-          variants={item}
-          className="text-foreground-secondary mt-6 max-w-2xl text-lg"
-        >
-          Custom software. AI. Automation. Cloud. Built for modern businesses.
-        </motion.p>
+      <div className="relative flex flex-col px-6 pt-40 pb-16 md:px-8 md:pt-44 md:pb-20 lg:pt-56 lg:pb-32">
 
         <motion.div
-          variants={item}
-          className="mt-10 flex flex-col gap-4 sm:flex-row"
+          initial={prefersReducedMotion ? false : "hidden"}
+          animate="visible"
+          variants={container}
+          className="flex flex-col items-start text-left"
         >
-          <Button href="/contact" variant="primary">
-            Book a Consultation
-          </Button>
-          <Button href="/services" variant="outline">
-            Explore Our Services
-          </Button>
+          <motion.div variants={item} className="flex items-center gap-2">
+            <span aria-hidden className="bg-accent h-2 w-2 shrink-0" />
+            <p className="text-foreground-muted font-mono text-xs font-semibold tracking-[0.28em] uppercase">
+              Enterprise Technology Partner
+            </p>
+          </motion.div>
+
+          <motion.h1
+            variants={item}
+            className="font-switzer text-foreground mt-6 text-4xl leading-tight font-extrabold tracking-tight sm:text-6xl sm:leading-[1.05] lg:text-8xl lg:leading-[0.95] lg:tracking-tighter"
+          >
+            <span className="block uppercase">Technology</span>
+            <span className="block uppercase">should remove</span>
+            {/*
+              Deliberately NOT uppercase like the two lines above -- the
+              whole line is a shout ("TECHNOLOGY SHOULD REMOVE"); the answer
+              shouldn't shout back. Lower-case + the accent color together
+              read as the calm, quiet payoff to the loud problem statement,
+              rather than just adding a third color-only emphasis on top of
+              an already-maximal all-caps treatment.
+            */}
+            <span className="text-accent block">complexity.</span>
+          </motion.h1>
+
+          <motion.div
+            variants={item}
+            className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-start lg:mt-10 lg:gap-16"
+          >
+            <p className="text-foreground-secondary max-w-xl text-lg lg:max-w-2xl">
+              We engineer businesses for the AI era.
+              <br />
+              One partner. Not multiple vendors.
+            </p>
+            <div className="flex flex-col items-start gap-3">
+              <Button href="/contact" variant="primary" pill>
+                Talk to Our Team
+              </Button>
+              <p className="text-foreground-muted text-sm">
+                30 minutes. No sales pitch.
+              </p>
+            </div>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      </div>
     </section>
   );
 }

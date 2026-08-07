@@ -11,6 +11,15 @@ interface ButtonProps {
   href?: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /**
+   * Fully rounded (capsule/pill) instead of the default rounded-md corner.
+   * Per-instance opt-in, not a new variant -- requested for one specific
+   * CTA (Hero's "Talk to Our Team"), not a sitewide shape change. Flagged
+   * in claudeContextExchange.md as a consistency question: the Navbar's own
+   * CTA still uses the default corner, left for the client to decide on
+   * rather than silently changed everywhere it appears.
+   */
+  pill?: boolean;
   className?: string;
   onClick?: MouseEventHandler;
   type?: "button" | "submit" | "reset";
@@ -52,6 +61,7 @@ export function Button({
   href,
   variant = "primary",
   size = "md",
+  pill = false,
   className,
   onClick,
   type = "button",
@@ -60,7 +70,8 @@ export function Button({
   const classes = cn(
     // Plain `transition` (not `transition-colors`) so color AND transform
     // changes both animate -- needed for the primary variant's hover scale.
-    "inline-flex items-center justify-center gap-2 rounded-md font-medium transition duration-150",
+    "inline-flex items-center justify-center gap-2 font-medium transition duration-150",
+    pill ? "rounded-full" : "rounded-md",
     "focus-visible:ring-accent focus-visible:ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
     "disabled:pointer-events-none disabled:opacity-50",
     VARIANT_STYLES[variant],
