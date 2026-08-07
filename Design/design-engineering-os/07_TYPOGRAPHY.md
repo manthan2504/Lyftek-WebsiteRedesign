@@ -284,6 +284,33 @@ Extract principles rather than copying styles.
 
 ---
 
+# Locked Decision (2026-08-07, superseded same day — see below)
+
+The candidate lists above are the research inputs. The three-typeface system originally shipped here (Public Sans body / IBM Plex Sans headings / Switzer Hero H1 / Geist Mono accents) was **replaced later the same day** by the trio system below, per explicit, direct client instruction. Kept in git history / `claudeContextExchange.md` for the record, not reproduced in full here — the table below is the only typography system currently live.
+
+---
+
+# Locked Decision — Trio System (2026-08-07, current)
+
+Replaces the system above in full. **Locked** — do not re-litigate without explicit client direction. Three faces, each with exactly one job, applied **sitewide** (not scoped to individual elements the way Switzer/Rinter originally were) — per the client's own instruction: *"for small heading section starters martian mono / buttons and normal text: delight / Big heading and numbers: Rinter … Apply this trio font pattern throughout."*
+
+| Role | Typeface | Utility | Where it's used |
+|---|---|---|---|
+| Big headings + numbers | Rinter (self-hosted, Regular/400 only) | `font-rinter` | Every H1/H2/H3 (Hero, About, Services incl. card titles, WhyLyftek, ContactCTA incl. its form-success state), WhyLyftek's stat value |
+| Small heading / section-starter labels + brand marks | Martian Mono (Google Fonts, 400/700/800) | `font-martian-mono` | Every section's uppercase eyebrow label (Hero/About/Services/WhyLyftek), Navbar wordmark + nav links, Footer wordmark + all 4 column headers |
+| Buttons + normal (body/paragraph) text | Delight (self-hosted, Regular/400 only) | `font-sans` (the sitewide default now) / `font-delight` (explicit alias) | Everything that doesn't opt into one of the other two faces — paragraphs, buttons, form inputs, card body copy |
+
+**Fully retired:** Public Sans, IBM Plex Sans, Switzer — no element uses `font-heading` or `font-switzer` anymore; both utilities and their underlying `next/font`/Fontshare loads were removed from `app/layout.tsx` and `app/globals.css`, not just left unused. **Geist Mono (`font-mono`) is the one holdover** from the old system, kept only for UI micro-copy that doesn't fit any of the trio's three categories: form field labels (Input/Select/Textarea), Avatar fallback initials, WhyLyftek's stat sub-label ("years of experience"), About's inline "Since 2011 | One partner for all of it." caption.
+
+**Provenance and licensing** (all self-hosted files were fetched from client-supplied links and license-checked before use, not guessed):
+- **Rinter** — Thunder Type foundry, free for personal & commercial use (confirmed via thunder.rs and the Befonts mirror the client linked, plus the font file's own embedded copyright string). Downloaded as a single Regular-weight `.otf`; no bold cut exists to buy or download.
+- **Delight** — Rajesh Rajput, Behance/Gumroad ("Delight Typeface / Free / 09 Weights / Variable"). Freeware, free for personal and commercial use per multiple independent sources (redistribution/resale/modification of the font files themselves is restricted — standard freeware terms, not a ban on webfont use). Only the Regular weight is available via free download; the other 8 weights sit behind Gumroad's own paid-or-free checkout flow, which wasn't completed.
+- **Martian Mono** — NOT the font the client originally linked. The client sent a Behance link to "AO Mono / Free Font" (Atelier Olschinsky); AO Mono's commercial-use license came back genuinely disputed across every source checked, and the designer's own site was unreachable to settle it. Martian Mono was proposed and accepted as a confirmed-license substitute with a similar geometric/constructivist "techy" monospace character — it's on Google Fonts proper (SIL Open Font License), so there's no licensing ambiguity at all.
+
+**Known tradeoff, accepted, not hidden:** Rinter and Delight each ship only a Regular (400) weight. Anywhere the old system called for a heavier weight (headings, button labels that used `font-medium`/`font-semibold`), the browser's own `font-synthesis` behavior algorithmically embolds the Regular glyphs rather than rendering a real designed bold cut. This was verified visually (screenshot, not assumed) to read acceptably at both display size (Hero's `lg:text-8xl` H1) and smaller heading/body sizes before accepting it — but it is synthetic bold, not a designed one, and that's a real (accepted) quality tradeoff, not an oversight.
+
+---
+
 # Final Principle
 
 Typography should make visitors feel that Lyftek is an experienced engineering organization.

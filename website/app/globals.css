@@ -29,26 +29,34 @@
 
 @theme inline {
   /*
-   * Two-typeface pairing: Public Sans is the site default (`font-sans`,
-   * applied to everything automatically -- body, nav, buttons, forms).
-   * IBM Plex Sans is opt-in via `font-heading`, used only on H1/H2/section
-   * headings and the nav wordmark, so the pairing is actually visible
-   * rather than living only in tiny label text. Geist Mono is unchanged --
-   * still the numeric/label accent, not one of the "two fonts."
+   * TYPE SYSTEM (locked 2026-08-07): a three-face trio, per direct client
+   * instruction ("Apply this trio font pattern throughout"), each with
+   * ONE job, applied sitewide -- see app/layout.tsx's own type-system
+   * docblock for the full mapping and history. This replaced an earlier
+   * four-face system (Public Sans body / IBM Plex Sans headings / Switzer
+   * Hero H1 / Geist Mono accents); `--font-heading` and `--font-switzer`
+   * are gone, `--font-sans` now points at Delight instead of Public Sans,
+   * and `--font-mono` (Geist Mono) survives only for the small UI labels
+   * outside the trio's three categories.
+   *
+   * `var(--font-rinter-display)` / `var(--font-martian-mono-raw)` /
+   * `var(--font-delight-display)` are next/font's own generated
+   * variables, each deliberately named differently from its
+   * Tailwind-facing token here to avoid a self-referential
+   * `--font-x: var(--font-x)` definition that would resolve to nothing.
    */
-  --font-sans: var(--font-body);
-  --font-heading: var(--font-ibm-plex-sans);
+  --font-sans: var(--font-delight-display), "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-geist-mono);
+  --font-rinter: var(--font-rinter-display), "Helvetica Neue", Arial, sans-serif;
+  --font-martian-mono: var(--font-martian-mono-raw), "Courier New", monospace;
   /*
-   * Switzer -- loaded via Fontshare's API in app/layout.tsx (external CDN,
-   * not next/font-hosted -- see that file's comment for why). Deliberately
-   * a THIRD typeface, not folded into --font-heading: scoped to the Hero
-   * H1 specifically (`font-switzer`), not the sitewide heading font. Same
-   * fallback stack Fulcrum's own CSS uses (confirmed via direct DOM
-   * inspection), so if Switzer fails to load the fallback still lands on a
-   * similar grotesk rather than an arbitrary default.
+   * `--font-delight` is an explicit-opt-in alias of the same face
+   * `--font-sans` now resolves to -- kept for call sites that want to
+   * force Delight even inside a subtree that's overridden the inherited
+   * default font for some other reason, rather than relying on
+   * inheritance alone.
    */
-  --font-switzer: "Switzer", "Helvetica Neue", Arial, sans-serif;
+  --font-delight: var(--font-delight-display), "Helvetica Neue", Arial, sans-serif;
 
   /* Semantic color tokens -- resolved per-theme below */
   --color-background: var(--background);
@@ -82,14 +90,16 @@
  */
 :root,
 .dark {
-  --background: #1d1d1d;
   /*
-   * "Panel" is a new token, darker than --background, for the bounded
-   * boxed nav+hero treatment (see components/layout/Navbar.tsx and
-   * components/sections/Hero.tsx). Distinct from --background so the box
-   * actually reads as a separate surface floating on the page, not just a
-   * bordered area of the same color.
+   * UNIFIED 2026-08-07 -- was #1d1d1d, a deliberately lighter shade than
+   * --panel (#0a0a0a) so boxed dashboard elements (Navbar/Hero/Footer/
+   * WhyLyftek) read as distinct floating surfaces against the page. Client
+   * asked to unify to a single pure black instead once the homepage's
+   * grey content sections (About/Services/ContactCTA) were visible next to
+   * the black panels -- now identical to --panel. The boxed panels still
+   * read as distinct via their own border + CornerBrackets, not color.
    */
+  --background: #0a0a0a;
   --panel: #0a0a0a;
   --panel-border: #2a2d31;
   --surface: #25272b;

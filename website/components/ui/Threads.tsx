@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { Renderer, Program, Mesh, Triangle, Color } from "ogl";
 
 /**
@@ -170,7 +170,16 @@ export function Threads({
   const animationFrameId = useRef<number>(0);
 
   const propsRef = useRef({ color, amplitude, distance, enableMouseInteraction });
-  propsRef.current = { color, amplitude, distance, enableMouseInteraction };
+  // Writing to a ref directly during render trips React 19's
+  // react-hooks/refs lint rule (a real rule, not upstream's original
+  // pattern -- the vendored source did this inline). useLayoutEffect keeps
+  // the update synchronous, before the next paint, so the render loop below
+  // never reads a stale value for more than one frame -- unlike a plain
+  // useEffect, which would still be correct but adds a strictly later timing
+  // guarantee than this needs.
+  useLayoutEffect(() => {
+    propsRef.current = { color, amplitude, distance, enableMouseInteraction };
+  });
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -289,9 +298,9 @@ export function Threads({
       if (container.contains(gl.canvas)) container.removeChild(gl.canvas);
       gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional:
-    // mount-once effect, live prop updates flow through propsRef instead of
-    // re-running the whole WebGL setup/teardown on every prop change.
+    // Mount-once effect, intentionally -- live prop updates flow through
+    // propsRef (see useLayoutEffect above) instead of re-running the whole
+    // WebGL setup/teardown on every prop change.
   }, []);
 
   return <div ref={containerRef} className="h-full w-full" {...rest} />;

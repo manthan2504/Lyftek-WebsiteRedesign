@@ -125,20 +125,24 @@ Typography should always maintain excellent readability and sufficient contrast.
 
 ## Accent Palette
 
-| Role | Color |
-|-------|--------|
-| Light Accent | #CDFC8A |
-| Primary Accent | #022E21 |
-| Hover / Active | #034A35 |
-| Accent Surface | #10392D |
+**Updated 2026-08-07 — locked.** The original `Hover / Active` and `Accent Surface` values below were revised; `Light Accent` and `Primary Accent` are unchanged from the initial candidate palette.
+
+| Role | Color | Status |
+|-------|--------|--------|
+| Light Accent | #CDFC8A | Unchanged |
+| Primary Accent (text-on-accent) | #022E21 | Unchanged |
+| Hover / Active | #0F9C7F (was #034A35) | **Revised** |
+| Accent Surface | #14B8A6 (was #10392D) | **Revised** |
 
 These colors should reinforce Lyftek's identity.
 
 The fresh lime accent communicates innovation and growth.
 
-The deep teal communicates trust, engineering, stability, and professionalism.
+The teal-green family communicates trust, engineering, stability, and professionalism.
 
 Both colors should work together rather than competing.
+
+**Why the revision:** the original `#034A35`/`#10392D` values are dark enough that against the panel/background neutrals (`#0A0A0A`/`#1D1D1D`) they read as "just went dark" rather than as a color — confirmed live (Button hover state, Hero background glow) rather than assumed from the hex values alone. Client direction: keep the pairing in the green family (do not introduce a rival hue like blue or magenta), just raise it to a value/saturation that actually survives against the near-black neutrals. `#0F9C7F` (jade) and `#14B8A6` (brighter teal-500) are the result — same hue family, still clearly distinct from the yellow-green Light Accent, now visible. `Primary Accent` (#022E21) was deliberately left alone — it's dark text sitting *on top of* the light lime accent (button labels), a completely different contrast job than a standalone color rendered on black, and was never actually the problem.
 
 ---
 

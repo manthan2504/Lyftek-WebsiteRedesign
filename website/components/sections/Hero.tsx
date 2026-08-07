@@ -59,16 +59,18 @@ const item = {
  * - Single near-full-width text column (no grid split). Fulcrum's own text
  *   container is ~91% of its hero width; this section's DASHBOARD_CONTAINER
  *   math already lands in the same range without adjustment.
- * - Headline: uppercase, font-extrabold (800), set in Switzer (`font-switzer`
- *   -- loaded via Fontshare's API in app/layout.tsx, see that file's
- *   comment) -- the client's explicit direction after seeing Fulcrum's own
- *   150px/800-weight/uppercase treatment, overriding an earlier draft that
- *   deliberately kept this mixed-case per 02_BRAND_GUIDELINES.md's "looks
- *   like an AI startup" litmus test. That guidance still stands as a
- *   general principle; this is a specific, explicit client override for
- *   this one headline, not a reversal of the principle itself. Switzer is
- *   scoped to this H1 only -- `font-heading` (IBM Plex Sans) remains the
- *   sitewide heading font everywhere else (Navbar wordmark, future H2s).
+ * - Headline: uppercase, font-extrabold (800 via browser synthesis --
+ *   Rinter only ships Regular), originally set in Switzer per the client's
+ *   explicit direction after seeing Fulcrum's own 150px/800-weight/
+ *   uppercase treatment, overriding an earlier draft that deliberately
+ *   kept this mixed-case per 02_BRAND_GUIDELINES.md's "looks like an AI
+ *   startup" litmus test. That guidance still stands as a general
+ *   principle; this was a specific, explicit client override for this one
+ *   headline, not a reversal of the principle itself. Switzer/IBM Plex
+ *   Sans are now BOTH retired (2026-08-07) in favor of the locked
+ *   Rinter/Martian Mono/Delight trio -- see app/layout.tsx's type-system
+ *   docblock -- this headline uses `font-rinter` like every other big
+ *   heading sitewide now, not a Hero-only exception anymore.
  * - Headline is 3 stacked lines ("Technology" / "should remove" /
  *   "complexity.") rather than wrapping naturally, per explicit client
  *   layout direction, with the illustration positioned beside the middle
@@ -164,14 +166,31 @@ export function Hero() {
         >
           <motion.div variants={item} className="flex items-center gap-2">
             <span aria-hidden className="bg-accent h-2 w-2 shrink-0" />
-            <p className="text-foreground-muted font-mono text-xs font-semibold tracking-[0.28em] uppercase">
+            <p className="text-foreground-muted font-martian-mono text-xs font-semibold tracking-[0.28em] uppercase">
               Enterprise Technology Partner
             </p>
           </motion.div>
 
+          {/*
+            2026-08-07, direct client request ("lets apply it here as well
+            but not with paid one, using CSS styling"): Switzer -> Rinter
+            (`font-rinter`, see app/layout.tsx + app/globals.css
+            docblocks). Rinter only has a free Regular (400) weight file --
+            no 800/extrabold cut exists to buy or download -- so
+            `font-extrabold` is kept as a CSS-only instruction rather than
+            dropped (contrast the About heading, which dropped it
+            entirely): with no 800-weight Rinter file loaded, the browser's
+            own default `font-synthesis: weight` behavior algorithmically
+            embolds the Regular glyphs to approximate the requested
+            weight, which is exactly the "no paid weight, use CSS" outcome
+            asked for here. (Nothing in this project's CSS disables
+            `font-synthesis`, so this works without extra styling beyond
+            the existing `font-extrabold` utility already on this
+            element.)
+          */}
           <motion.h1
             variants={item}
-            className="font-switzer text-foreground mt-6 text-4xl leading-tight font-extrabold tracking-tight sm:text-6xl sm:leading-[1.05] lg:text-8xl lg:leading-[0.95] lg:tracking-tighter"
+            className="font-rinter text-foreground mt-6 text-4xl leading-tight font-extrabold tracking-tight sm:text-6xl sm:leading-[1.05] lg:text-8xl lg:leading-[0.95] lg:tracking-tighter"
           >
             <span className="block uppercase">Technology</span>
             <span className="block uppercase">should remove</span>
@@ -190,13 +209,22 @@ export function Hero() {
             variants={item}
             className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-start lg:mt-10 lg:gap-16"
           >
-            <p className="text-foreground-secondary max-w-xl text-lg lg:max-w-2xl">
+            {/*
+              2026-08-07, direct client instruction (after confirming
+              Delight's license): "delight we gonna use it for text
+              like... normal texts on web." Switched from the sitewide
+              `text-foreground-secondary` default (Public Sans, inherited
+              via `font-sans`) to `font-delight` -- see app/layout.tsx +
+              app/globals.css docblocks. Scoped to this one paragraph, not
+              a sitewide body-copy change.
+            */}
+            <p className="text-foreground-secondary font-delight max-w-xl text-lg lg:max-w-2xl">
               We engineer businesses for the AI era.
               <br />
               One partner. Not multiple vendors.
             </p>
             <div className="flex flex-col items-start gap-3">
-              <Button href="/contact" variant="primary" pill>
+              <Button href="/contact" variant="primary">
                 Talk to Our Team
               </Button>
               <p className="text-foreground-muted text-sm">

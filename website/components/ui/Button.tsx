@@ -11,15 +11,6 @@ interface ButtonProps {
   href?: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
-  /**
-   * Fully rounded (capsule/pill) instead of the default rounded-md corner.
-   * Per-instance opt-in, not a new variant -- requested for one specific
-   * CTA (Hero's "Talk to Our Team"), not a sitewide shape change. Flagged
-   * in claudeContextExchange.md as a consistency question: the Navbar's own
-   * CTA still uses the default corner, left for the client to decide on
-   * rather than silently changed everywhere it appears.
-   */
-  pill?: boolean;
   className?: string;
   onClick?: MouseEventHandler;
   type?: "button" | "submit" | "reset";
@@ -61,7 +52,6 @@ export function Button({
   href,
   variant = "primary",
   size = "md",
-  pill = false,
   className,
   onClick,
   type = "button",
@@ -70,8 +60,17 @@ export function Button({
   const classes = cn(
     // Plain `transition` (not `transition-colors`) so color AND transform
     // changes both animate -- needed for the primary variant's hover scale.
+    // No rounding utility -- sharp, square corners, per direct client
+    // instruction ("boxy, sharp boxy... nothing fancy clean professional")
+    // that also retires the `pill` prop this component used to have
+    // (`rounded-full`, previously Hero's "Talk to Our Team" CTA only) --
+    // that variant directly contradicted the new boxy direction, so it was
+    // removed rather than left as unreachable dead code. This also
+    // resolves the Navbar-CTA-vs-Hero-CTA shape inconsistency flagged
+    // repeatedly across earlier sessions (09_DESIGN_SYSTEM.md, this file's
+    // own prior docblock): both are the same sharp box now, nothing left
+    // to reconcile.
     "inline-flex items-center justify-center gap-2 font-medium transition duration-150",
-    pill ? "rounded-full" : "rounded-md",
     "focus-visible:ring-accent focus-visible:ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
     "disabled:pointer-events-none disabled:opacity-50",
     VARIANT_STYLES[variant],

@@ -222,30 +222,31 @@ The following components will be designed and documented throughout the project.
 
 ## Navigation
 
-### Navbar ✅ Built — `website/components/layout/Navbar.tsx`
+### Navbar ✅ Built (v2 — locked 2026-08-07) — `website/components/layout/Navbar.tsx`
 
 **Purpose:** Single unified site navigation, replacing the live site's two-layer header (contact bar + nav) that the Docs PDF flagged for adding unnecessary height and burying the logo.
 
 **Usage:** Rendered once, in `app/layout.tsx`, so every route inherits it automatically. Never import it directly into a page.
 
-**Structure:** `Lyftek` wordmark (left) — primary links (center-right, desktop only) — primary CTA button (right, desktop only) — mobile menu toggle (right, replaces links+CTA below the `lg` breakpoint). Content constrained to the standard 1280px container from `06_LAYOUT_AND_SPACING.md`.
+**Structure (v2 — superseded the original 1280px inline-header version):** an independent **floating boxed panel**, not an inline header — `bg-panel` (near-black), square corners, `DASHBOARD_CONTAINER` width (1440px, same as Hero's panel below it, via `constants/layout.ts`), `sticky top-8 mt-8` so it keeps its floating gap from the viewport edge even after scrolling rather than snapping flush. `CornerBrackets` (lime L-shaped marks, `components/ui/CornerBrackets.tsx`) on all 4 corners — this is the only component on the page that gets the corner-bracket treatment; the Hero dashboard panel behind it stays plain. Inside the box: `Lyftek` text wordmark (left, `font-heading`) — primary links (center-right, desktop only) — primary CTA button (right, desktop only) — mobile menu toggle (right, replaces links+CTA below `lg`).
 
-**Variants:** None yet — one navbar for the whole site. If a page ever needs a transparent/hero-blended variant, extend via props rather than forking the component.
+**Homepage integration:** on the homepage specifically, `app/page.tsx` pulls Hero's wider dashboard panel up via a negative margin (`NAVBAR_FOOTPRINT_PX` constant) so Hero's dark/grid background shows through above/below/around this floating box — Navbar itself has zero awareness of that and renders identically on every route.
+
+**Variants:** None — one navbar for the whole site.
 
 **States:**
-- Default (top of page): transparent border, solid background, no blur.
-- Scrolled (`scrollY > 8px`): border + `backdrop-blur-md` fade in via CSS transition — reinforces orientation without being decorative.
-- Active link: `aria-current="page"`, full-opacity text vs. `foreground-secondary` for inactive links.
+- Default: no scroll-based border/blur change in v2 (superseded — the boxed-panel treatment above replaces the earlier inline-header's scroll-elevation state).
+- Active link: `layoutId="nav-active-indicator"` Framer Motion shared-layout indicator — a flat 2px accent underline that slides smoothly between links as the active route changes, rather than just appearing/disappearing (researched against Stripe/Vercel/Linear vs. IBM/Microsoft/GitHub precedent). Inactive links get a CSS-only underline-grow on hover/focus (`scale-x-0` → `scale-x-100`), no Framer Motion needed for a plain hover state.
 - Mobile menu open/closed: toggled by a Phosphor `List`/`X` icon button with `aria-expanded`/`aria-controls`.
 - Focus: visible `focus-visible` ring (accent color) on every interactive element.
 
 **Responsive:** `lg` (1024px) breakpoint splits desktop (inline links + CTA) from mobile (hamburger → slide-down panel with the same links + full-width CTA). Chosen over the more common `md` breakpoint because 6 nav items + CTA + logo felt cramped in the 768–1023px tablet range during review.
 
-**Accessibility:** Skip-to-content link (targets `#main-content` — every page's top-level landmark must carry that id), semantic `<header>`/`<nav aria-label="Primary|Mobile">`, `aria-current` on the active link, Escape closes the mobile menu, menu also resets on route change, all interactive elements keyboard-reachable with visible focus rings.
+**Accessibility:** Skip-to-content link (targets `#main-content`), semantic `<header>`/`<nav aria-label="Primary|Mobile">`, `aria-current` on the active link, Escape closes the mobile menu, menu also resets on route change (via render-time state adjustment, not a `useEffect` — avoids the `react-hooks/set-state-in-effect` lint rule), all interactive elements keyboard-reachable with visible focus rings.
 
-**Motion:** Mobile menu open/close is a Framer Motion height/opacity transition (`duration: 0.2s`), skipped entirely (`duration: 0`) when `useReducedMotion()` reports a preference for reduced motion. Scroll-elevation and link hover states are plain CSS transitions (color/background/border/blur only — no layout-affecting properties), per `13_MOTION_AND_ANIMATION.md`'s performance rules.
+**Motion:** Mobile menu open/close is a Framer Motion height/opacity transition (`duration: 0.2s`), skipped entirely (`duration: 0`) when `useReducedMotion()` reports a preference for reduced motion. No glow/shadow on the active-link indicator, no always-on blur — both would tip into effects `04_VISUAL_LANGUAGE.md` bans.
 
-**Implementation notes:** Nav items + CTA live in `constants/navigation.ts` (data), not hardcoded in the component — changing the sitemap means editing one array. Uses the shared `Button` component (see Buttons section below) rather than one-off button markup. Logo is currently a **text wordmark**, not an image — no Lyftek logo asset has been supplied to any Claude session yet; swap it for a real `<Image>` logo as soon as brand assets exist, in `components/layout/Navbar.tsx`.
+**Implementation notes:** Nav items + CTA live in `constants/navigation.ts`. Uses the shared `Button` component. Logo is still a **text wordmark**, not an image — no Lyftek logo asset has been supplied yet. CTA reads "Book a Consultation," rendered as a sharp box like every other button sitewide (see Button entry below) — the pill-vs-rounded-md consistency question flagged in earlier sessions is resolved as of 2026-08-07: both this CTA and Hero's now share the same sharp corner, nothing left to reconcile.
 
 - Mobile Navigation — built as part of Navbar above, not a separate component.
 - Sticky Navigation — built as part of Navbar above (`position: sticky`).
@@ -254,24 +255,33 @@ The following components will be designed and documented throughout the project.
 
 ---
 
-## Hero ✅ Built (v1) — `website/components/sections/Hero.tsx`
+## Hero ✅ Built (v3 — LOCKED 2026-08-07) — `website/components/sections/Hero.tsx`
+
+**This entry replaces v1 and v2 entirely — do not treat anything below as still-in-flux.** The client has explicitly confirmed satisfaction with the current build ("this hero section is locked in now"). Any future change to it is a new decision, not a continuation of an open one.
 
 **Purpose:** first thing every visitor sees; must communicate what Lyftek does and why it's trustworthy within a few seconds (01_PROJECT_CONTEXT.md).
 
-**Structure:** centered single column, eyebrow label → H1 → supporting subhead → primary+secondary CTA row → small trust caption. Constrained to the standard 1280px container. No two-column split, no hero image/illustration/video.
+**Structure:** single near-full-width text column (`DASHBOARD_CONTAINER`, 1440px, same width as Navbar's floating panel above it) — eyebrow → 3-line headline → description + CTA row, side by side at `sm:` and up. No two-column grid split (a two-column "Systems Panel" diagram concept was built, shown to the client, and explicitly rejected — see claudeContextExchange.md Session log for 2026-08-06/07 — reverted in full before this version was built).
 
-**Copy decisions (subject to content review, not final copy sign-off):**
-- Headline: "Engineering **technology** businesses can trust." — deliberately broader than the Docs PDF's suggested "AI era" framing, because 02_BRAND_GUIDELINES.md explicitly warns against positioning Lyftek as AI-first ("This company is building for the future," not "this company only does AI").
-- Subhead: short fragment style ("Custom software, AI, cloud, and cybersecurity — engineered for businesses that need to get it right"), matching the PDF's own critique that the original subhead read like a tech-stack list instead of answering "how will you help my business."
-- Primary CTA "Book a Consultation" reuses the exact Navbar CTA (same destination, `/contact`) rather than introducing new wording — one consistent action across the site.
-- Secondary CTA "Explore Our Services" → `/services` — this was the *original* site's sole hero CTA; kept, just demoted to secondary now that a stronger primary exists.
-- Trust caption: the ISO 9001:2015 / ISO/IEC 27001:2022 certification line still appears, but as small muted text below the CTAs, not a bordered badge competing with the headline (direct fix for the PDF's "competes with the main message" critique).
+**Copy (final, client-approved):**
+- Eyebrow: a lime `h-2 w-2` square + "Enterprise Technology Partner" in `font-mono`, uppercase, wide tracking.
+- Headline, 3 stacked lines, `font-rinter` (sitewide big-heading face as of 2026-08-07's trio system, see 07_TYPOGRAPHY.md — was Hero-only Switzer before that), `font-extrabold` (via browser synthesis, Rinter only ships Regular), up to `lg:text-8xl`: "Technology" / "should remove" (both uppercase) / "**complexity.**" (deliberately lowercase + lime accent color — the loud problem statement answered by a quiet, calm payoff line, not a third uppercase emphasis stacked on top of the first two).
+- Description: "We engineer businesses for the AI era. / One partner. Not multiple vendors." — the second line deliberately does not name a specific number of vendors (an earlier draft said "not five vendors"; client asked for a general word instead). Set in `font-delight`, the trio's body-text face.
+- CTA: single sharp-boxed (no rounding, per 2026-08-07's "boxy" direction — see Button entry; was `rounded-full` via a now-removed `pill` prop before that) primary button, "Talk to Our Team", plus a small caption below it: "30 minutes. No sales pitch."
 
-**Visual Area:** intentionally empty of imagery. No product screenshots, dashboards, or illustrations exist yet, and fabricating a stand-in graphic would misrepresent the product (see 04_VISUAL_LANGUAGE.md's warning against "generic marketing illustrations" and the project-wide "never fabricate information" rule). In their place: a static, very-low-opacity 64px grid texture (masked to fade toward the bottom) plus a soft accent-tinted radial gradient behind the headline — both restrained enough to avoid the "glowing UI" / "blurred glow orb" pattern 04_VISUAL_LANGUAGE.md explicitly bans. Revisit this once real product/case-study visuals exist.
+**Background — Threads (WebGL, continuous, `components/ui/Threads.tsx`):** an animated field of flowing, noise-driven thread lines, sourced from React Bits (`14_DESIGN_AND_DEVELOPMENT_RESOURCES.md`'s preferred UI libraries list), colored jade (`#0F9C7F`, same token as the Button's `accent-hover` state — one shared secondary color, not a third). This **replaced** two earlier builds in sequence: (1) a static brand-mark illustration bleeding behind the text (Fulcrum-Labs-inspired), (2) briefly, a two-column "Systems Panel" node-diagram concept (rejected by the client, fully reverted). Threads was explicit client direction, given directly with a code snippet to integrate.
 
-**Motion:** entrance is a staggered fade+rise (eyebrow → headline → subhead → CTAs → trust line, 0.08s stagger, 0.5s ease-out per element), skipped entirely via `useReducedMotion()` when the user prefers reduced motion. No background motion, no looping animation, no parallax — matches 13_MOTION_AND_ANIMATION.md's "Hero Animation" guidance (progressive reveal, not a cinematic intro).
+**This is a deliberate, confirmed reversal of the "hero stays fully static" decision** made earlier in the same engagement (client had previously rejected Fulcrum's own scroll-linked parallax for exactly this reason). The reversal was surfaced and confirmed with the client before building it, not assumed. `Threads` has no built-in `prefers-reduced-motion` handling (verified against upstream source), so `Hero.tsx` skips mounting it entirely for reduced-motion users rather than rendering it inert — falls back to the plain `--color-panel` background.
 
-**Not built yet:** a dedicated Trust/Certifications section (the PDF explicitly recommended moving the ISO badge out of the hero into its own section — that section itself doesn't exist yet, the hero just no longer crowds it in). A real visual/proof element for the hero once product assets exist.
+**A real bug hit and fixed during integration, worth knowing if this pattern recurs elsewhere:** the Threads wrapper `<div>` was first given `className="absolute inset-0 -z-10"`. The canvas rendered with a healthy WebGL context, correct dimensions, and zero GL errors — but nothing was visible. Root cause: `<section>` doesn't establish its own stacking context (only `position: relative`, no `z-index`), so a negative-z-index child can escape it and stack behind an ancestor further up the DOM tree instead of just behind this section's own later siblings. Fixed by removing the explicit z-index and relying on DOM order instead (the Threads div renders first, before the text block) — the same mechanism the earlier static illustration used successfully. **Rule of thumb for this codebase: prefer DOM-order stacking over negative z-index for full-bleed section backgrounds**, unless the element genuinely needs to escape its parent's stacking context on purpose.
+
+**Line thickness:** the shader's `u_line_width` constant was bumped from React Bits' default `7.0` to `10.0` per direct client request ("slightly increase thickness of those wavy lines") — a one-line change to a GLSL constant inside `Threads.tsx`, verified via live screenshot before/after.
+
+**Deliberately excludes:** background video (Mythoughts.md questions its value for a services company); the ISO certification badge (belongs in its own future Trust/Certifications section, not the hero); any product mockup/screenshot (none exist yet — fabricating one would misrepresent the product). Per-character split-text entrance (Fulcrum uses this) was considered and rejected as a creative-agency signature move, not an enterprise-consulting one.
+
+**Motion budget note:** with Threads now continuous, this hero no longer follows a "one-time entrance, then total stillness" model — the text stagger (eyebrow → headline → description/CTA, 0.08s stagger, 0.5s ease-out per element, `useReducedMotion()`-gated) is unchanged, but the background is now a standing exception to stillness.
+
+**Not built yet:** a dedicated Trust/Certifications section. Any other homepage section below the Hero (Services, Why Choose Us, proof/stats, testimonials, final CTA) — Hero remains the only homepage section built.
 
 ---
 
@@ -279,9 +289,33 @@ The following components will be designed and documented throughout the project.
 
 ### Button 🔶 Partially built — `website/components/ui/Button.tsx`
 
-Built now: `primary` (solid accent, e.g. nav CTA) and `ghost` (used for the mobile menu icon toggle), plus `outline`. Sizes: `md` (default) and `icon` (square, for icon-only buttons). Renders as a Next.js `Link` when given an `href`, otherwise a native `<button>`.
+Built now: `primary` (solid accent, e.g. nav CTA), `outline`, and `ghost` (used for the mobile menu icon toggle). Sizes: `md` (default) and `icon` (square, for icon-only buttons). Renders as a Next.js `Link` when given an `href`, otherwise a native `<button>`. Primary variant gets a subtle hover scale (`1.0 → 1.02`) and active-press scale (`0.98`), researched against Stripe/Linear-tier CTA polish.
 
-Not built yet: `Secondary` variant, and full HTML-attribute passthrough (currently a deliberately minimal prop surface — `onClick`, `type`, `aria-*` — extend it when a real use case needs more, rather than speculatively). `Link Button` (text-only, no background) also not built yet — first real need for it will define its API.
+**Corners (revised 2026-08-07): sharp, no rounding at all.** Per direct client instruction ("boxy, sharp boxy... use box shape as our theme... nothing fancy clean professional"), Button no longer rounds its corners under any variant. This retires the `pill?: boolean` prop entirely (previously `rounded-full`, Hero's "Talk to Our Team" CTA only, added 2026-08-06/07) — that shape directly contradicted the new boxy direction, so it was removed from the component rather than left unreachable. This also **resolves** the Navbar-CTA-vs-Hero-CTA shape inconsistency flagged repeatedly in earlier sessions: both CTAs are the same sharp box now, nothing left open to decide.
+
+Not built yet: `Secondary` variant, and full HTML-attribute passthrough (currently a deliberately minimal prop surface — `onClick`, `type`, `aria-*` — extend it when a real use case needs more, rather than speculatively). `Link Button` (text-only, no background) also not built yet.
+
+---
+
+### LyftekMark 🔶 Built, currently unused — `website/components/ui/LyftekMark.tsx`
+
+**Purpose:** the real Lyftek brand mark (derived from the client-supplied outline reference, `website/assets/lyttekOutline.png`) as clean SVG outline paths (`fill="none"`), brand colors by default. Path data lives separately in `constants/lyftekMark.ts`.
+
+**Status:** built and functional, but **has no current consumer** — it was originally used by the Hero background (`HeroBackdrop.tsx`), which has since been deleted after two rounds of iteration (static illustration → rejected two-column diagram panel → Threads WebGL background, see Hero entry above). Deliberately kept as a standalone, reusable component rather than deleted, per its own docblock — a likely future use is a Navbar/footer logo swap once real brand assets are formalized. Do not delete without checking whether a future session has wired it in elsewhere first.
+
+**API:** `strokeTop`/`strokeBottom` (colors), `strokeWidth` (in the SVG's own viewBox units — note viewBox-to-screen scale affects actual rendered thickness, do not compare raw stroke-width numbers across differently-scaled SVGs without converting), `bottomScaleX` (non-uniform horizontal stretch of the bottom shape only, left-anchored).
+
+---
+
+### Threads (WebGL background) ✅ Built — `website/components/ui/Threads.tsx`
+
+**Purpose:** animated field of flowing, noise-driven thread lines — currently the Hero's background (see Hero entry above for the full integration story, the z-index bug that was fixed, and the client's line-thickness adjustment). Sourced from React Bits (`github.com/DavidHDev/react-bits`, listed in `14_DESIGN_AND_DEVELOPMENT_RESOURCES.md`'s preferred UI libraries), vendored in as project source (not a live package dependency beyond `ogl`, the WebGL library it's built on) so the shader/render logic can be adjusted directly (e.g. the line-thickness change).
+
+**Usage:** `<Threads color={[r,g,b]} amplitude={n} distance={n} enableMouseInteraction />` — color is normalized `[0-1]` floats, not hex (WebGL shader uniform, not CSS). Renders a full-bleed canvas via a `useRef` container; sizes itself to its parent via `ResizeObserver`.
+
+**Reduced motion:** has no built-in handling — any consumer must conditionally skip mounting it under `useReducedMotion()`, as `Hero.tsx` does, rather than relying on the component itself to degrade gracefully.
+
+**Stacking:** must be positioned via DOM order (render early, no explicit negative z-index) rather than `-z-index`, unless its container element establishes its own stacking context — see the Hero entry's bug writeup for why.
 
 ---
 

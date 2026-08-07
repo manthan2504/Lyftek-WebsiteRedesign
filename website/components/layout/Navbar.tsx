@@ -85,9 +85,17 @@ export function Navbar() {
         </a>
 
         <div className="flex h-16 items-center justify-between px-6 md:px-8">
+          {/*
+            2026-08-07, direct client instruction (after fetching Martian
+            Mono as a licensed AO Mono substitute): "navbar elements...
+            we gonna use martian mono." Wordmark switched from `font-
+            heading` (IBM Plex Sans, the sitewide heading face) to
+            `font-martian-mono` -- see app/layout.tsx + app/globals.css
+            docblocks for the full font provenance.
+          */}
           <Link
             href="/"
-            className="focus-visible:ring-accent font-heading text-foreground rounded-sm text-lg font-semibold tracking-tight focus-visible:ring-2 focus-visible:outline-none"
+            className="focus-visible:ring-accent font-martian-mono text-foreground rounded-sm text-lg font-semibold tracking-tight focus-visible:ring-2 focus-visible:outline-none"
           >
             Lyftek
           </Link>
@@ -104,7 +112,7 @@ export function Navbar() {
                   href={link.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "focus-visible:ring-accent group relative rounded-sm py-1 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                    "focus-visible:ring-accent font-martian-mono group relative rounded-sm py-1 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
                     active
                       ? "text-foreground"
                       : "text-foreground-secondary hover:text-foreground",
@@ -180,7 +188,7 @@ export function Navbar() {
                     href={link.href}
                     aria-current={isActiveLink(link.href) ? "page" : undefined}
                     className={cn(
-                      "focus-visible:ring-accent rounded-md px-3 py-2.5 text-base font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                      "focus-visible:ring-accent font-martian-mono rounded-md px-3 py-2.5 text-base font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
                       isActiveLink(link.href)
                         ? "bg-surface text-foreground"
                         : "text-foreground-secondary hover:bg-surface-hover hover:text-foreground",
