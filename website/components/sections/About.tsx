@@ -3,7 +3,10 @@
 import { motion, useReducedMotion } from "framer-motion";
 import CardSwap, { Card } from "@/components/ui/CardSwap";
 import { RequirementCard } from "@/components/ui/RequirementCard";
-import { PANEL_CONTAINER } from "@/constants/layout";
+import {
+  DASHBOARD_CONTAINER,
+  PANEL_CONTAINER_NESTED,
+} from "@/constants/layout";
 import { INQUIRY_CARDS } from "@/constants/inquiries";
 
 // `as const` preserves the "easeOut" literal type Framer Motion's Transition
@@ -49,9 +52,12 @@ const fadeUp = {
  *      time understood as the actual goal rather than something to
  *      eliminate. Box height matches the text column's own rendered height
  *      via `lg:items-stretch` + `h-full` (top aligns with "Who We Are",
- *      bottom with "Since 2011 / One partner for all of it.", per earlier
- *      explicit instruction -- verified via getBoundingClientRect at
- *      exactly 0px difference on both edges). The skewY-offset compensation
+ *      bottom originally calibrated against "Since 2011 / One partner for
+ *      all of it." before the latter moved into the box itself -- see
+ *      CLOSING CAPTION below -- now just "Since 2011"; height math is
+ *      still driven by the text column's real rendered height either way,
+ *      so this wasn't re-verified as a fixed number, just noted as no
+ *      longer literally matching this sentence). The skewY-offset compensation
  *      (see components/ui/CardSwap.tsx's docblock) lives on an inner
  *      wrapper, not this box, so the box's own border position stays fixed
  *      while only the content inside shifts -- getting that sign backwards
@@ -77,15 +83,26 @@ const fadeUp = {
  * NOT real people's photos -- that file's docblock has the full "realistic
  * vibe" request and why real Unsplash headshots were declined for it).
  *
- * CLOSING CAPTION: "One partner for all of it." sits in the text column as
- * a static line (NOT part of the card rotation, per the client's own
- * preference for a permanently-visible caption over a rotating one) --
- * ties the four rotating inquiry types back to Hero's own "One partner.
- * Not multiple vendors." line rather than introducing a competing slogan.
+ * CLOSING CAPTION (REVISED 2026-08-08): "One partner for all of it." no
+ * longer sits in the text column -- moved into the card-stack box itself
+ * (top-left, lime `text-accent`, plain weight -- see that div's own
+ * docblock below) per direct client request, then the text-column copy of
+ * it removed on a same-day follow-up once it existed in both places ("keep
+ * only Since 2011" in that row). Still a static line, not part of the card
+ * rotation, and still ties the four rotating inquiry types back to Hero's
+ * own "One partner. Not multiple vendors." line -- only WHERE it sits on
+ * the page changed, not its purpose.
  *
- * CONTAINER/BACKGROUND RULE: unchanged -- `bg-background`, matching the
- * page (both are the same pure black post-unification, see
- * app/globals.css). `PANEL_CONTAINER` (1280px), not `DASHBOARD_CONTAINER`.
+ * CONTAINER/BACKGROUND RULE: background unchanged -- `bg-background`,
+ * matching the page (both are the same pure black post-unification, see
+ * app/globals.css). Inner content is still `PANEL_CONTAINER_NESTED`
+ * (1280px, unchanged width from the old `PANEL_CONTAINER`). What's new
+ * (2026-08-08, see constants/layout.ts's "RAILS MADE CONTINUOUS" note): an
+ * outer `DASHBOARD_CONTAINER` + `border-x border-border` wrapper now sits
+ * between this section and that inner content, purely so this section's
+ * side rails line up with Hero/WhyLyftek/Footer's above and below it --
+ * this section still isn't a boxed `bg-panel` dashboard panel itself, only
+ * its rails now run continuous with the ones that are.
  *
  * MOTION: text still gets the one-time `whileInView` fade-up. CardSwap's
  * own swap animation is continuous/interval-driven by design (see that
@@ -98,23 +115,34 @@ export function About() {
   const prefersReducedMotion = useReducedMotion();
 
   return (
-    // 2026-08-07: border-t moved from motion.div (PANEL_CONTAINER-width,
-    // so the line was inset from the viewport edges) to this outer
-    // section (full width) -- full-page audit after the client flagged
-    // inconsistent line widths across sections (some edge-to-edge, some
-    // not). Every section's divider is now on the full-width outer
-    // element, matching Services/ContactCTA; box-model order (border,
-    // then padding, then content) still guarantees a real gap before the
-    // heading either way, since nothing sits between the bordered element
-    // and the padded one.
-    <section className="border-divider border-t bg-background relative">
-      <motion.div
-        initial={prefersReducedMotion ? false : "hidden"}
-        whileInView="visible"
-        viewport={{ once: true, margin: "-100px" }}
-        variants={fadeUp}
-        className={`grid grid-cols-1 gap-16 px-6 py-24 md:px-8 lg:grid-cols-2 lg:items-stretch lg:gap-12 lg:py-32 ${PANEL_CONTAINER}`}
+    // 2026-08-07: border-t moved from motion.div (PANEL_CONTAINER-width) to
+    // this outer full-width section -- full-page audit after the client
+    // flagged inconsistent line widths across sections.
+    //
+    // REVERSED 2026-08-08 (direct client feedback: "section break
+    // boundaries are outside of the left and right box boundaries... entire
+    // boxy vibe is cracked"): moving border-t here is exactly what caused
+    // that crack, once About also grew `border-x` rails (same session, see
+    // constants/layout.ts's "RAILS MADE CONTINUOUS" note) -- a full-width
+    // border-t and an inset border-x are two different elements at two
+    // different widths, so the horizontal line ran past the vertical rails
+    // instead of meeting them at a corner. Fix: border-t moves onto the
+    // SAME `border-border`/DASHBOARD_CONTAINER div as the rails (below),
+    // dropping the separate `border-divider` token in favor of the rails'
+    // own `border-border` so the two edges are the same color too, not just
+    // the same width. `relative` stays on the outer section (unrelated to
+    // the border, still needed for whatever's positioned against it).
+    <section className="bg-background relative">
+      <div
+        className={`border-border border-t border-x ${DASHBOARD_CONTAINER}`}
       >
+        <motion.div
+          initial={prefersReducedMotion ? false : "hidden"}
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={fadeUp}
+          className={`grid grid-cols-1 gap-16 px-6 py-24 md:px-8 lg:grid-cols-2 lg:items-stretch lg:gap-12 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
+        >
         <div className="flex max-w-xl flex-col gap-6">
           <div className="flex items-center gap-2">
             <span aria-hidden className="bg-accent h-2 w-2 shrink-0" />
@@ -146,15 +174,18 @@ export function About() {
             lead move from a business problem to a working system without
             coordinating five different vendors along the way.
           </p>
-          <div className="flex items-center gap-4">
-            <p className="text-foreground-muted font-mono text-sm tracking-wide">
-              Since 2011
-            </p>
-            <span aria-hidden className="bg-divider h-3 w-px" />
-            <p className="text-foreground-muted font-mono text-sm tracking-wide">
-              One partner for all of it.
-            </p>
-          </div>
+          {/*
+            2026-08-08, direct client request: "One partner for all of it."
+            removed from this row -- it now lives inside the card-stack box
+            instead (lime-accented, top-left, see that div below), and
+            having it in both places read as duplicated copy rather than a
+            deliberate second mention. `Since 2011` stays here alone; the
+            divider + second `<p>` it used to separate are gone with it
+            (nothing left to divide).
+          */}
+          <p className="text-foreground-muted font-mono text-sm tracking-wide">
+            Since 2011
+          </p>
         </div>
 
         {/*
@@ -301,9 +332,68 @@ export function About() {
           other change.
         */}
         <div className="flex justify-center lg:justify-end">
-          <div className="bg-panel border-border relative h-[380px] w-full max-w-[380px] shrink-0 overflow-hidden border lg:-mt-16 lg:h-[calc(100%+4rem)] lg:w-[600px] lg:max-w-none">
+          {/*
+            2026-08-08, senior QA pass, second real bug found the same way
+            as the inner card region above: `lg:w-[600px]` (fixed,
+            unconditional) was tuned against wide-desktop column widths
+            (~614px+ at 1440px, where 600 comfortably fits with room to
+            spare) but this box's actual grid column shrinks to ~424px
+            right at the `lg:` breakpoint boundary (1024px) -- since this
+            box has no `min-width:0`/shrink safety and no cap of its own at
+            that size, it rendered at the full 600px regardless, overflowing
+            straight through the text column next to it (confirmed via
+            screenshot at 1024px: heading/paragraph text visibly cut off
+            behind the box). `lg:w-full lg:max-w-[600px]` resolves to
+            `min(actual column width, 600px)` -- shrinks to fit the real
+            column at 1024px, and lands on exactly the original fixed
+            600px once the column is wide enough to hold it (1440px and up),
+            so nothing changes at the viewport this was originally tuned
+            for.
+          */}
+          <div className="bg-panel border-border relative h-[380px] w-full max-w-[380px] shrink-0 overflow-hidden border lg:-mt-16 lg:h-[calc(100%+4rem)] lg:w-full lg:max-w-[600px]">
+            {/*
+              2026-08-08, direct client request: "One partner for all of
+              it." added a second time, inside this box, lime-accented --
+              the text column (above) still carries the original per the
+              CLOSING CAPTION note in this file's docblock; this is a
+              distinct, deliberate restatement stamped onto the visual box
+              itself (like a caption on the artifact it's describing), not
+              a duplicate-by-mistake. Placed top-left, above where the card
+              region starts (that region is pushed down via `mt-32` below),
+              so this sits in the empty space above the card rather than
+              competing with it. Plain weight, plain (non-mono, non-
+              tracked-out) text per direct follow-up correction -- "no
+              weight, normal text" -- this is NOT another eyebrow label
+              (those are `font-martian-mono` + uppercase + tracking-wide +
+              semibold sitewide); it's a quiet, regular-weight caption, with
+              `text-accent` (lime) as the only thing marking it as
+              deliberate. `z-10` keeps it above CardSwap's own stack (which
+              has no explicit z-index of its own but paints later in DOM
+              order without it).
+            */}
+            <p className="text-accent absolute top-6 left-6 z-10 text-sm font-normal">
+              One partner for all of it.
+            </p>
             <div className="flex h-full w-full justify-end">
-              <div className="relative mt-32 mr-6 h-full w-[460px] shrink-0">
+              {/*
+                2026-08-08, senior QA pass: `w-[460px]` (fixed, unconditional)
+                was overflowing the box's own responsive width below `lg:`
+                (`max-w-[380px]` there vs. this region's fixed 460px) --
+                since this region is right-pinned via the parent's
+                `justify-end`, that 80px overflow bled off the box's LEFT
+                edge instead of the intended right/bottom decorative crop,
+                clipping real content (role labels, message text) at every
+                viewport between mobile and `lg:` (confirmed via screenshot
+                at 768px). `w-full max-w-[460px]` resolves to
+                `min(container width, 460px)` -- at `lg:`+ the container is
+                600px, so this still evaluates to the original fixed 460px
+                (zero visual change there, `justify-end` still pins it right
+                with the same empty-gap-on-the-left effect the box-width
+                history above this comment describes); below `lg:` it now
+                shrinks to fit the box's own actual width instead of
+                overflowing it.
+              */}
+              <div className="relative mt-32 mr-6 h-full w-full max-w-[460px] shrink-0">
                 <CardSwap
                   width={560}
                   height={440}
@@ -326,6 +416,7 @@ export function About() {
           </div>
         </div>
       </motion.div>
+      </div>
     </section>
   );
 }

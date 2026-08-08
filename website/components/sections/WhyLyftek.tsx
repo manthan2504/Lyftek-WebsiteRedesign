@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { animate, motion, useInView, useReducedMotion } from "framer-motion";
-import { DASHBOARD_CONTAINER } from "@/constants/layout";
+import {
+  DASHBOARD_CONTAINER,
+  PANEL_CONTAINER_NESTED,
+} from "@/constants/layout";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -131,6 +134,16 @@ function AnimatedStatValue({ value }: { value: string }) {
  * UNCHANGED -- only the outline stroke and corner marks were the
  * complaint, not this section's color-block identity.
  *
+ * SIDE BORDERS RE-ADDED (2026-08-08, narrower than what was rejected
+ * above): `border-x border-border` added back to this panel as part of
+ * removing Navbar's lime corners/shared width (see Navbar.tsx and
+ * Hero.tsx's docblocks -- Navbar is full-width chrome now, so Hero/
+ * WhyLyftek/Footer's own `DASHBOARD_CONTAINER` panels carry the "bounded
+ * dashboard" cue via side rails instead). This is deliberately NOT the
+ * full `border` + `CornerBrackets` combination the client rejected on
+ * 2026-08-07 -- side-only, no corner marks, no color. The `border-t`
+ * hairline above is unaffected/unchanged.
+ *
  * Motion: one-time fade-up on scroll into view (`whileInView`, `once:
  * true`), gated behind `useReducedMotion()` -- matches 13_MOTION_AND_
  * ANIMATION.md's "one-time entrance, then stillness" model for non-hero
@@ -169,18 +182,61 @@ export function WhyLyftek() {
     // 2026-08-07: border-t moved from the inner bg-panel/DASHBOARD_CONTAINER
     // div to this outer section (full width) -- full-page audit after the
     // client flagged inconsistent line widths (some edge-to-edge, some
-    // inset). Every section's divider is now full-width, matching About/
+    // inset). Every section's divider was full-width, matching About/
     // Services/ContactCTA/Footer.
-    <section className="border-divider mt-16 mb-16 border-t lg:mt-24 lg:mb-24">
+    //
+    // REVERSED 2026-08-08 (direct client feedback: "section break
+    // boundaries are outside of the left and right box boundaries... entire
+    // boxy vibe is cracked" -- see About.tsx's docblock for the full
+    // reasoning): border-t moves back onto the inner bg-panel/border-x div
+    // below, effectively undoing the 2026-08-07 move now that "full-width"
+    // is no longer the shared standard -- "same width as the border-x
+    // rails" is. This div already had its own vertical padding
+    // (py-16/lg:py-24), so unlike Services/ContactCTA nothing needs to move
+    // with it to avoid a flush-against-content regression.
+    //
+    // 2026-08-08 (still same complaint, second pass): the outer section's
+    // `mt-16 mb-16 lg:mt-24 lg:mb-24` margins are GONE now, not just
+    // reduced -- measured via computed bounding boxes, a 96px empty gap sat
+    // between this box's top border and Services' bottom border (and
+    // another below, before ContactCTA) even after the border-t/border-x
+    // alignment fix, because margin physically pushes this box away from
+    // its neighbors regardless of how well the borders themselves line up.
+    // About/Services/ContactCTA don't have this problem -- they were
+    // already margin-free, touching by design. Visual breathing room from
+    // border to content is untouched (still comes from this div's own
+    // py-16/lg:py-24 padding); only the margin that was keeping the BOXES
+    // apart from each other is removed.
+    //
+    // `PANEL_CONTAINER_NESTED` on the motion.div (2026-08-08, direct
+    // client decision -- see that constant's own docblock): this section
+    // used to pad the `DASHBOARD_CONTAINER` box directly, same flush-left
+    // treatment as Hero. The client explicitly wants Hero's left edge kept
+    // as its own one-off pattern and every section below it -- including
+    // this one -- sharing a different, indented pattern instead. Adding
+    // `PANEL_CONTAINER_NESTED` here (an inner centered/capped column,
+    // matching About/Services/ContactCTA) is what moves this section's
+    // content off Hero's edge and onto that shared one.
+    //
+    // `px-6`/`py-16`/`md:px-8`/`lg:py-24` moved from the outer `bg-panel`
+    // div onto THIS motion.div, alongside `PANEL_CONTAINER_NESTED` --
+    // matching About.tsx/Services.tsx's exact nesting shape (padding and
+    // the centered/capped width live on the SAME element there). Padding
+    // on the outer div instead would center a narrower box inside an
+    // already-shrunk interior, landing a few pixels off from About/
+    // Services/ContactCTA's left edge -- confirmed via
+    // getBoundingClientRect (this section's eyebrow measured at x=88,
+    // theirs at x=120, before this fix).
+    <section>
       <div
-        className={`bg-panel px-6 py-16 md:px-8 lg:py-24 ${DASHBOARD_CONTAINER}`}
+        className={`bg-panel border-border border-t border-x ${DASHBOARD_CONTAINER}`}
       >
         <motion.div
           initial={prefersReducedMotion ? false : "hidden"}
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
           variants={fadeUp}
-          className="flex flex-col gap-2"
+          className={`flex flex-col gap-2 px-6 py-16 md:px-8 lg:py-24 ${PANEL_CONTAINER_NESTED}`}
         >
           <div className="flex items-center gap-2">
             <span aria-hidden className="bg-accent h-2 w-2 shrink-0" />

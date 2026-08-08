@@ -6,15 +6,15 @@ import { ContactCTA } from "@/components/sections/ContactCTA";
 
 export default function Home() {
   return (
-    // -mt-16 (-64px) pulls this <main> up from its normal flow position
-    // (NAVBAR_FOOTPRINT_PX, 96px) to leave a 32px gap above Hero's dashboard
-    // panel -- matching Navbar's own mt-8 floating-gap unit for rhythm
-    // consistency, rather than jamming the panel flush against the very top
-    // of the viewport. scroll-mt-24 is unrelated to that gap -- it reserves
-    // the full 96px NAVBAR_FOOTPRINT_PX so the skip link's jump target isn't
-    // left hidden under the floating (sticky) Navbar. See
-    // constants/layout.ts and claudeContextExchange.md for the full
-    // reasoning.
+    // 2026-08-08: no more negative top margin here -- that -mt-16 hack
+    // existed only to pull Hero's panel up behind/around the old floating,
+    // margined Navbar so the page background showed through around the
+    // float. Navbar is now flush, full-width chrome (see Navbar.tsx's own
+    // docblock) with nothing to sit behind, so <main> just flows normally
+    // beneath it. scroll-mt-16 reserves NAVBAR_FOOTPRINT_PX (64px, Navbar's
+    // row height) so the skip link's jump target isn't hidden under the
+    // sticky Navbar. See constants/layout.ts and claudeContextExchange.md
+    // for the full reasoning/history.
     //
     // Section order below Hero follows the approved homepage section plan
     // (2026-08-07): About ("Who We Are") -> Services ("What We Do") ->
@@ -22,7 +22,7 @@ export default function Home() {
     // deliberately absent -- deferred until real client quotes exist, per
     // that same plan. Footer is global chrome, rendered in app/layout.tsx,
     // not here.
-    <main id="main-content" className="-mt-16 scroll-mt-24">
+    <main id="main-content" className="scroll-mt-16">
       <Hero />
       <About />
       <Services />

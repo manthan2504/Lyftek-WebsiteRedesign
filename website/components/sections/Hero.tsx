@@ -116,13 +116,26 @@ const item = {
  * below is unchanged; the background is the one exception to stillness now,
  * and it is skipped entirely under `prefers-reduced-motion` (see the
  * `prefersReducedMotion` check around the `<Threads>` render below).
+ *
+ * SIDE BORDERS (2026-08-08, direct client decision on a two-option senior-
+ * UI/UX call): `border-x border-border` added to this panel. Navbar lost
+ * its lime `CornerBrackets` and its shared width with this panel -- it's
+ * now full-viewport-width chrome (see Navbar.tsx's own docblock) instead of
+ * a boxed widget. To keep the "this is a bounded dashboard panel" cue alive
+ * without Navbar around to establish it, this panel (and WhyLyftek/Footer,
+ * the other two `DASHBOARD_CONTAINER` panels) now carries its own vertical
+ * rails. Side-only, not a full `border` -- a full box outline plus corner
+ * marks was explicitly rejected by the client on 2026-08-07 for WhyLyftek/
+ * Footer (see those files' docblocks); rails alone are a narrower, more
+ * minimal treatment than what was rejected then, not a reversal of that
+ * decision.
  */
 export function Hero() {
   const prefersReducedMotion = useReducedMotion();
 
   return (
     <section
-      className={`bg-panel relative overflow-hidden ${DASHBOARD_CONTAINER}`}
+      className={`bg-panel border-border relative overflow-hidden border-x ${DASHBOARD_CONTAINER}`}
     >
       {/*
         Threads (WebGL, continuous) replaces the old static grid + radial
@@ -156,7 +169,26 @@ export function Hero() {
         </div>
       )}
 
-      <div className="relative flex flex-col px-6 pt-40 pb-16 md:px-8 md:pt-44 md:pb-20 lg:pt-56 lg:pb-32">
+      {/*
+        2026-08-08, direct client feedback: "at initial load user cant see
+        the entire content completely," asking for vertical centering.
+        Previous layout used large, asymmetric top padding (`pt-40`/`pt-44`/
+        `pt-56`, far bigger than the `pb-*` below it) to push the text block
+        down from the top -- on shorter viewports that pushed the CTA row
+        ("Talk to Our Team" / "30 minutes. No sales pitch.") past the fold
+        before any scrolling. Replaced with `justify-center` on a
+        `min-h-[calc(100svh-4rem)]` box (svh, not vh, so mobile browsers'
+        dynamic address-bar chrome doesn't miscalculate the height; `4rem`
+        matches Navbar's real `h-16` row height / NAVBAR_FOOTPRINT_PX --
+        Navbar is sticky, in-flow chrome now, not an overlay, so its height
+        genuinely subtracts from the space left for Hero on first paint) so
+        the whole content block centers in whatever vertical space is
+        actually visible on load, with even `py-16`/`lg:py-20` padding as a
+        floor rather than a fixed push. On tall content / short viewports
+        this still grows past one screen rather than clipping anything --
+        `min-h`, not a fixed `h`.
+      */}
+      <div className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-center px-6 py-16 md:px-8 lg:py-20">
 
         <motion.div
           initial={prefersReducedMotion ? false : "hidden"}

@@ -33,54 +33,62 @@ export interface ServicePillar extends NavLink {
  * Services.tsx) and the Footer's single "Services" link -- the footer no
  * longer lists these individually (see Footer.tsx's 2026-08-08 decluttering
  * docblock), but this remains the one place the service catalog is defined
- * so both consumers (plus any future /services page) read from one source.
+ * so both consumers read from one source.
+ *
+ * HREFS (2026-08-08, direct client decision): were `/services#slug`,
+ * pointing at a standalone services page that was never actually built --
+ * "there is no need of a separate services page, we already have that
+ * section at homepage." Changed to `/#slug`, an in-page anchor into this
+ * same homepage section (Services.tsx) instead. Each `id={slug}` lives on
+ * the matching card in Services.tsx's own render -- see that file for the
+ * anchor targets these hrefs actually land on.
  */
 export const SERVICE_PILLARS: ServicePillar[] = [
   {
     label: "Customized Software Development",
-    href: "/services#customized-software-development",
+    href: "/#customized-software-development",
     icon: Code,
     description: "Tailor-made applications built to meet your unique business needs.",
   },
   {
     label: "RPA & Automation Solutions",
-    href: "/services#rpa-automation-solutions",
+    href: "/#rpa-automation-solutions",
     icon: Robot,
     description: "Automate repetitive processes and boost efficiency using RPA.",
   },
   {
     label: "IT Staffing & Resource Augmentation",
-    href: "/services#it-staffing-resource-augmentation",
+    href: "/#it-staffing-resource-augmentation",
     icon: Users,
     description: "On-demand skilled IT professionals to scale your team quickly.",
   },
   {
     label: "Cybersecurity & ISMS (ISO 27001)",
-    href: "/services#cybersecurity-isms",
+    href: "/#cybersecurity-isms",
     icon: ShieldCheck,
     description: "Protect systems and data with enterprise-grade cybersecurity.",
   },
   {
     label: "Cloud Services & IT Support",
-    href: "/services#cloud-services-it-support",
+    href: "/#cloud-services-it-support",
     icon: Cloud,
     description: "Cloud migration, optimization, and 24x7 IT infrastructure support.",
   },
   {
     label: "GenAI & AI/ML Solutions",
-    href: "/services#genai-ai-ml-solutions",
+    href: "/#genai-ai-ml-solutions",
     icon: Sparkle,
     description: "AI-powered automation, predictions, and intelligent solutions.",
   },
   {
     label: "QA & Software Testing Services",
-    href: "/services#qa-software-testing",
+    href: "/#qa-software-testing",
     icon: Bug,
     description: "Ensure quality, reliability, and performance with structured QA.",
   },
   {
     label: "Corporate Training & Enablement",
-    href: "/services#corporate-training-enablement",
+    href: "/#corporate-training-enablement",
     icon: GraduationCap,
     description: "Upskill teams with hands-on training in modern technologies.",
   },

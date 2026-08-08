@@ -7,7 +7,10 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { LyftekMark } from "@/components/ui/LyftekMark";
-import { PANEL_CONTAINER } from "@/constants/layout";
+import {
+  DASHBOARD_CONTAINER,
+  PANEL_CONTAINER_NESTED,
+} from "@/constants/layout";
 import { SERVICE_PILLARS } from "@/constants/services";
 
 const fadeUp = {
@@ -79,10 +82,14 @@ const SERVICE_OPTIONS = [
  * consistently avoided here rather than reintroduced.
  *
  * CONTAINER/BACKGROUND RULE: `bg-background`, matching the page itself --
- * NOT `bg-panel`. Per the rule Footer.tsx's docblock establishes, only
- * sections whose background differs from the page need the boxed
- * `DASHBOARD_CONTAINER` treatment; this one stays full-width with inner
- * content constrained by `PANEL_CONTAINER` instead.
+ * NOT `bg-panel`. Inner content is `PANEL_CONTAINER_NESTED`-width.
+ *
+ * RAILS (2026-08-08, see constants/layout.ts's "RAILS MADE CONTINUOUS"
+ * note): an outer `DASHBOARD_CONTAINER` + `border-x border-border` wrapper
+ * now sits between the `<section>` and the content div below, purely so
+ * this section's side rails run continuous with Hero/WhyLyftek/Footer's
+ * above and below it. Background stays plain `bg-background` -- this isn't
+ * a boxed `bg-panel` dashboard panel, only the rails are shared now.
  *
  * MOTION: one-time `whileInView` fade-up, gated behind `useReducedMotion()`
  * -- same pattern as About.tsx/Services.tsx/WhyLyftek.tsx, not Hero's
@@ -106,13 +113,22 @@ export function ContactCTA() {
     // lg:py-32) -- same fix as Services.tsx, same underlying bug: it was
     // on motion.div, which has no vertical padding of its own, so the line
     // sat flush against the heading with zero gap.
-    <section className="border-divider border-t bg-background py-24 lg:py-32">
+    //
+    // REVISED 2026-08-08 (same "cracked boxy vibe" fix as About.tsx/
+    // Services.tsx -- see About.tsx's docblock): border-t (and the py-24/
+    // lg:py-32 padding it depends on to keep its gap) both move onto the
+    // border-x/DASHBOARD_CONTAINER rail div, so the horizontal and vertical
+    // lines are the same element at the same width.
+    <section className="bg-background">
+      <div
+        className={`border-border border-t border-x py-24 lg:py-32 ${DASHBOARD_CONTAINER}`}
+      >
       <motion.div
         initial={prefersReducedMotion ? false : "hidden"}
         whileInView="visible"
         viewport={{ once: true, margin: "-80px" }}
         variants={fadeUp}
-        className={`grid grid-cols-1 gap-12 px-6 md:px-8 lg:grid-cols-2 lg:gap-20 ${PANEL_CONTAINER}`}
+        className={`grid grid-cols-1 gap-12 px-6 md:px-8 lg:grid-cols-2 lg:gap-20 ${PANEL_CONTAINER_NESTED}`}
       >
         <div className="flex flex-col gap-6">
           {/*
@@ -193,6 +209,7 @@ export function ContactCTA() {
           )}
         </div>
       </motion.div>
+      </div>
     </section>
   );
 }

@@ -1,8 +1,10 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { Button } from "@/components/ui/Button";
-import { PANEL_CONTAINER } from "@/constants/layout";
+import {
+  DASHBOARD_CONTAINER,
+  PANEL_CONTAINER_NESTED,
+} from "@/constants/layout";
 import { SERVICE_PILLARS } from "@/constants/services";
 import { cn } from "@/utils/cn";
 
@@ -175,15 +177,24 @@ function pillarBorderClasses(index: number, total: number) {
  *
  * DATA: renders `SERVICE_PILLARS` from constants/services.ts verbatim --
  * does NOT invent or duplicate a service list here. That file is also the
- * Footer's own "Services" link source (see Footer.tsx's docblock), so this
- * section and the Footer can never drift into two different lists of
- * service names. Only 4 pillars, not the live site's 8: SERVICE_PILLARS
- * already documents the consolidation rationale (Docs/Mythoughts.md's
- * critique that listing all 8 with equal weight buries Lyftek's core
- * strengths) -- this component just consumes that decision, it doesn't
- * remake it. The full 8-item catalog still exists at /services, which is
- * exactly why this section ends with a "View All Services" link rather
- * than trying to be the complete list itself.
+ * Footer's/Navbar's own service-content source (see those files'
+ * docblocks), so none of the three ever drift into different lists of
+ * service names. All 8 real services, not a curated subset -- see
+ * SERVICE_PILLARS's own docblock for when/why that changed from an earlier
+ * 4-item consolidation.
+ *
+ * NO "VIEW ALL SERVICES" LINK (removed 2026-08-08, direct client decision):
+ * this section used to end with a link to a standalone `/services` page --
+ * that page was never actually built, and the client's call once asked
+ * directly was that it didn't need to exist: "there is no need of a
+ * separate services page, we already have that section at homepage." THIS
+ * section already IS the complete list (all 8, not a curated preview), so
+ * a "view all" link pointing at itself would have been redundant even
+ * setting the dead-link problem aside. `id="services"` + `scroll-mt-16` on
+ * the `<section>` below make this the actual anchor target for the top-nav
+ * "Services" link and every individual service href instead (both changed
+ * from `/services...` to `/#...` in constants/navigation.ts and
+ * constants/services.ts).
  *
  * NO PHOTOS / NO STOCK IMAGERY: icon + heading + one-line description only.
  * This is the same reasoning Hero.tsx's docblock gives for excluding a
@@ -196,15 +207,16 @@ function pillarBorderClasses(index: number, total: number) {
  *
  * CONTAINER RULE: this section's own background is `bg-background` --
  * i.e. it does NOT differ from the page background, unlike Hero/Navbar/
- * Footer's `bg-panel`. Per the rule Footer.tsx's docblock lays out (and the
- * approved homepage section plan), a section only needs the boxed
- * `DASHBOARD_CONTAINER` treatment when its own background color diverges
- * from the page and would otherwise hit the true viewport edge -- a
- * `bg-background` section has no such seam, so it stays a full-width
- * `<section>` with its inner content constrained by `PANEL_CONTAINER`
- * (1280px "Standard Content" width) instead. Using DASHBOARD_CONTAINER here
- * would incorrectly imply this section is another boxed dashboard panel
- * like Hero, which it isn't.
+ * Footer's `bg-panel`. Its inner content stays `PANEL_CONTAINER_NESTED`
+ * width (1280px "Standard Content"), not `bg-panel`-boxed like Hero.
+ *
+ * RAILS (2026-08-08, see constants/layout.ts's "RAILS MADE CONTINUOUS"
+ * note): an outer `DASHBOARD_CONTAINER` + `border-x border-border` wrapper
+ * now sits between the `<section>` and the `PANEL_CONTAINER_NESTED` content
+ * div below, purely so this section's side rails run continuous with Hero/
+ * WhyLyftek/Footer's above and below it on the page. This does NOT make it
+ * a boxed `bg-panel` dashboard panel -- the background is still plain
+ * `bg-background`, only the rails are now shared.
  *
  * FLAT + BORDERED, NOT CARD/SHADOW: this is the one homepage section where
  * a grid layout is legitimate at all -- four discrete, enumerable services
@@ -239,11 +251,30 @@ export function Services() {
     // py-24/lg:py-32 padding) after the client flagged it colliding with
     // "What We Do" -- it was previously on the inner PANEL_CONTAINER div,
     // which has no vertical padding of its own (only px-6/md:px-8), so the
-    // line sat flush against the eyebrow with zero gap. Matches how
-    // About/WhyLyftek/ContactCTA/Footer already put their own divider on
-    // whichever element actually owns the top spacing.
-    <section className="border-divider border-t bg-background py-24 lg:py-32">
-      <div className={`px-6 md:px-8 ${PANEL_CONTAINER}`}>
+    // line sat flush against the eyebrow with zero gap.
+    //
+    // REVISED 2026-08-08 (same "cracked boxy vibe" fix as About.tsx -- see
+    // that file's docblock): border-t moves again, this time onto the
+    // border-x/DASHBOARD_CONTAINER rail div, so the horizontal and vertical
+    // lines are the same element at the same width instead of a full-width
+    // border-t meeting an inset border-x. The `py-24 lg:py-32` padding that
+    // used to live on this outer `<section>` moves down with it -- border-t
+    // needs padding INSIDE it (not on the section outside it) to keep the
+    // original zero-gap fix from regressing.
+    //
+    // `id="services"` + `scroll-mt-16` added 2026-08-08: this section is
+    // now the actual landing target for the top-nav "Services" link and
+    // every individual service's own href (both changed from a dead
+    // `/services` page to in-page anchors, see constants/navigation.ts +
+    // constants/services.ts) -- `scroll-mt-16` (64px, matching Navbar's
+    // real row height / NAVBAR_FOOTPRINT_PX) keeps the sticky Navbar from
+    // covering the heading when the browser jumps here, same reasoning as
+    // app/page.tsx's own `scroll-mt-16` on `<main>`.
+    <section id="services" className="scroll-mt-16 bg-background">
+      <div
+        className={`border-border border-t border-x py-24 lg:py-32 ${DASHBOARD_CONTAINER}`}
+      >
+      <div className={`px-6 md:px-8 ${PANEL_CONTAINER_NESTED}`}>
         <motion.div
           initial={prefersReducedMotion ? false : "hidden"}
           whileInView="visible"
@@ -262,12 +293,39 @@ export function Services() {
             font-heading (IBM Plex Sans) -> font-rinter, font-semibold
             dropped -- Rinter only ships a Regular weight, see
             app/layout.tsx's docblock.
+
+            COPY REVISED 2026-08-08, direct client flag: "One partner, four
+            disciplines." was accurate when SERVICE_PILLARS held the earlier
+            4-item consolidation (see that file's own docblock) -- once it
+            grew to the real 8-item catalog, the count in this headline went
+            stale and started contradicting the 8 cards actually rendered
+            below it. Replaced (client's pick among several options,
+            following Docs/content_writing.md's "write multiple headline
+            options" guidance) with a version that doesn't hardcode a count
+            at all, so it can't drift out of sync again if the catalog size
+            ever changes -- still closes on the same "one partner" idea
+            Hero/About both use, per that doc's "flows naturally into the
+            next section" principle.
           */}
           <motion.h2
             variants={item}
-            className="font-rinter text-foreground mt-4 max-w-2xl text-3xl tracking-tight sm:text-4xl lg:text-5xl"
+            className="font-rinter text-foreground mt-4 max-w-3xl text-3xl tracking-tight sm:text-4xl lg:max-w-none lg:text-5xl"
           >
-            One partner, four disciplines.
+            {/*
+              2026-08-08, direct client request: forced two-line break
+              instead of natural wrap -- same `<span className="block">`
+              per-line technique Hero.tsx's own H1 uses, splitting exactly
+              on the sentence boundary. `max-w-2xl` (672px) -- sized for
+              the OLD single-run heading's natural wrap point -- was still
+              narrower than the first line's own text at `lg:text-5xl`,
+              so it kept wrapping a second time despite the manual split.
+              `lg:max-w-none` removes the constraint at the width it
+              actually mattered; `max-w-3xl` below `lg:` is just wide
+              enough that neither line wraps again at the smaller sizes
+              either.
+            */}
+            <span className="block">The full range of enterprise technology.</span>
+            <span className="block">One partner to run it.</span>
           </motion.h2>
 
           <motion.div
@@ -278,6 +336,16 @@ export function Services() {
               ({ label, description, href, icon: ServiceIcon }, index) => (
                 <a
                   key={href}
+                  // `id` is the actual anchor TARGET (this card is what
+                  // `href` -- and the Navbar mega-menu's matching entry --
+                  // scroll to); `href.slice(2)` strips the leading `/#`
+                  // that constants/services.ts's hrefs now carry. `href`
+                  // itself pointing at this same card's own anchor is a
+                  // no-op self-link when clicked directly here, which is
+                  // harmless -- the meaningful use of `href` is everywhere
+                  // ELSE it's read from (Navbar, ContactCTA's service
+                  // select).
+                  id={href.slice(2)}
                   href={href}
                   className={cn(
                     "group border-border focus-visible:ring-accent bg-background relative flex flex-col gap-4 overflow-hidden p-8 focus-visible:ring-2 focus-visible:outline-none lg:p-10",
@@ -361,13 +429,8 @@ export function Services() {
               ),
             )}
           </motion.div>
-
-          <motion.div variants={item} className="mt-12 lg:mt-14">
-            <Button href="/services" variant="outline">
-              View All Services
-            </Button>
-          </motion.div>
         </motion.div>
+      </div>
       </div>
     </section>
   );

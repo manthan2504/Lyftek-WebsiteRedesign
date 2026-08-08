@@ -10,7 +10,14 @@ import type { NavLink } from "@/types/navigation";
 export const NAV_LINKS: NavLink[] = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },
-  { label: "Services", href: "/services" },
+  // 2026-08-08, direct client decision: no separate /services page --
+  // "we already have that section at homepage." Was "/services" (a page
+  // that was never actually built, a dead link waiting to happen); now an
+  // in-page anchor to Services.tsx's own `id="services"` instead.
+  // Solutions/Careers/Contact are untouched -- this only reverses the
+  // /services page specifically, not the rest of the site's still-planned
+  // multi-page structure (10_PAGE_BLUEPRINTS.md).
+  { label: "Services", href: "/#services" },
   { label: "Solutions", href: "/solutions" },
   { label: "Careers", href: "/careers" },
   { label: "Contact", href: "/contact" },

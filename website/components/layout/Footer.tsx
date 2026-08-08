@@ -143,8 +143,19 @@ export function Footer() {
   }
 
   return (
-    <footer className="border-divider mt-16 mb-8 border-t lg:mt-24 lg:mb-12">
+    <footer className="mb-8 lg:mb-12">
       {/*
+        2026-08-08 (second pass on the same "cracked boxy vibe" complaint,
+        same root cause as WhyLyftek.tsx -- see that file's docblock): the
+        `mt-16 lg:mt-24` top margin this footer used to carry is gone.
+        Measured a 96px empty gap between ContactCTA's bottom border and
+        this footer's top border even after the border-t/border-x width fix
+        below, because that margin physically pushed this box away from
+        ContactCTA regardless of how well the borders lined up. `mb-8 lg:
+        mb-12` stays -- trailing space at the true end of the page, after
+        the last bordered box, isn't a connection problem the way a TOP
+        margin between two boxes is.
+
         2026-08-07: first tried matching WhyLyftek's `border` +
         `CornerBrackets` outline here (a same-day fix for the two panels
         feeling inconsistent with each other). Direct follow-up feedback
@@ -160,9 +171,36 @@ export function Footer() {
         audit. Moved to the outer `<footer>` (full width) to match every
         other section. `bg-panel` + `DASHBOARD_CONTAINER` on the div below
         are unchanged.
+
+        2026-08-08: `border-x border-border` added to this div -- Navbar
+        lost its lime corners/shared width (now full-width chrome, see
+        Navbar.tsx's docblock), so this panel (+ Hero + WhyLyftek) now
+        carries the "bounded dashboard" cue itself via side rails. Side-
+        only, no corner marks, no color -- deliberately narrower than the
+        full outline+corners combo rejected above, not a reversal of that
+        decision. The internal 3-column `border`/`divide-x` grid below is a
+        separate, pre-existing thing (2026-08-08 footer restructure) and is
+        unaffected by this.
+
+        2026-08-08 (later same day): `border-t` moves BACK onto this div
+        from the outer `<footer>` -- direct client feedback that the
+        section-break lines running full-width past the (now-added)
+        border-x rails read as "cracked," not connected (see About.tsx's
+        docblock for the full reasoning). `border-divider` on the outer
+        `<footer>` is dropped in favor of this div's own `border-border`, so
+        the horizontal and vertical edges are the same element, same width,
+        same color.
+
+        2026-08-08 (third pass, same complaint): `border-b` added. This is
+        the LAST bordered box on the page -- every other section's "bottom"
+        edge is implicitly closed by the next section's `border-t` starting
+        exactly where it ends, but Footer has no next section to borrow a
+        bottom edge from, so it was the one box in the whole frame left open
+        underneath. Explicit `border-b` closes it instead of relying on a
+        neighbor that doesn't exist.
       */}
       <div
-        className={`bg-panel px-6 py-16 md:px-8 lg:py-20 ${DASHBOARD_CONTAINER}`}
+        className={`bg-panel border-border border-t border-b border-x px-6 py-16 md:px-8 lg:py-20 ${DASHBOARD_CONTAINER}`}
       >
         <div className="border-border divide-border grid grid-cols-1 divide-y border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           {/* Brand + social -- logo/wordmark removed 2026-08-08, see docblock */}
