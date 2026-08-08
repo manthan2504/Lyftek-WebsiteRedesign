@@ -115,13 +115,6 @@ export function ContactCTA() {
         className={`grid grid-cols-1 gap-12 px-6 md:px-8 lg:grid-cols-2 lg:gap-20 ${PANEL_CONTAINER}`}
       >
         <div className="flex flex-col gap-6">
-          <LyftekMark
-            aria-hidden
-            className="h-10 w-10"
-            strokeTop="var(--color-foreground-muted)"
-            strokeBottom="var(--color-accent)"
-            strokeWidth={7}
-          />
           {/*
             2026-08-07, locked trio: font-heading -> font-rinter,
             font-semibold dropped (Regular-only face, see app/layout.tsx).

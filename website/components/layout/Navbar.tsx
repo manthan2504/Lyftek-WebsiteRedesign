@@ -4,12 +4,33 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { List, X } from "@phosphor-icons/react";
+import { CaretUp, List, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { CornerBrackets } from "@/components/ui/CornerBrackets";
 import { DASHBOARD_CONTAINER } from "@/constants/layout";
 import { NAV_LINKS, PRIMARY_CTA } from "@/constants/navigation";
+import { SERVICE_PILLARS } from "@/constants/services";
 import { cn } from "@/utils/cn";
+
+/**
+ * 2026-08-08, direct client request ("at navbar for solutions and services
+ * add a arrow icon pointing up, when hovered a [panel] must slide down
+ * softly"). Only "Services" gets real dropdown content -- `SERVICE_PILLARS`
+ * (constants/services.ts), the same 8-item real catalog the homepage
+ * "What We Do" section and Footer's own "Services" link already point at,
+ * so this doesn't become a fourth, independently-drifting list of service
+ * names. "Solutions" has no real content anywhere in this project (no data
+ * file, no page copy) -- rather than invent placeholder category names
+ * (this project's standing "never fabricate" rule, already applied to
+ * WhyLyftek's stats and the ContactCTA inquiry cards), the client's own
+ * direct call was to ship the same arrow + hover affordance on it with an
+ * honest "Coming soon" panel instead of fake content -- see `NAV_DROPDOWNS`
+ * below.
+ */
+const NAV_DROPDOWNS: Record<string, { label: string; href: string }[] | "placeholder"> = {
+  "/services": SERVICE_PILLARS.map(({ label, href }) => ({ label, href })),
+  "/solutions": "placeholder",
+};
 
 /**
  * Purpose: single unified navigation bar, replacing the current live site's
@@ -106,44 +127,107 @@ export function Navbar() {
           >
             {NAV_LINKS.map((link) => {
               const active = isActiveLink(link.href);
+              const dropdown = NAV_DROPDOWNS[link.href];
+
               return (
-                <Link
+                // 2026-08-08: `dropdown ? "group/item" : undefined` -- a
+                // SECOND, independently-named group. This link already
+                // uses the unnamed `group` (below) for its own underline
+                // hover state; the dropdown panel needs its own hover
+                // trigger scoped to just this list item (not every nav
+                // link at once), which plain `group`/`group-hover` can't
+                // express once there are two different hover behaviors
+                // nested in the same tree -- Tailwind's named groups
+                // (`group/item`, `group-hover/item:`) exist exactly for
+                // this "more than one group in scope" case.
+                <div
                   key={link.href}
-                  href={link.href}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "focus-visible:ring-accent font-martian-mono group relative rounded-sm py-1 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
-                    active
-                      ? "text-foreground"
-                      : "text-foreground-secondary hover:text-foreground",
-                  )}
+                  className={cn("relative", dropdown && "group/item")}
                 >
-                  {link.label}
-                  {active ? (
-                    // Shared-layout indicator: Framer Motion animates this
-                    // sliding smoothly to whichever link is active, instead of
-                    // just appearing/disappearing. Flat 2px accent bar, no
-                    // glow/shadow -- 04_VISUAL_LANGUAGE.md bans glow effects
-                    // regardless of how subtle.
-                    <motion.span
-                      layoutId="nav-active-indicator"
-                      transition={{
-                        duration: prefersReducedMotion ? 0 : 0.2,
-                        ease: "easeOut",
-                      }}
-                      className="bg-accent absolute inset-x-0 -bottom-1 h-[2px] rounded-full"
-                    />
-                  ) : (
-                    // Hover-only underline, CSS transform only (no Framer
-                    // Motion needed for a plain hover state per
-                    // 13_MOTION_AND_ANIMATION.md's "CSS first" guidance).
-                    // Also triggers on keyboard focus, not just mouse hover.
-                    <span
-                      aria-hidden
-                      className="bg-foreground-secondary absolute inset-x-0 -bottom-1 h-[1.5px] origin-left scale-x-0 rounded-full transition-transform duration-150 ease-out group-hover:scale-x-100 group-focus-visible:scale-x-100"
-                    />
+                  <Link
+                    href={link.href}
+                    aria-current={active ? "page" : undefined}
+                    aria-haspopup={dropdown ? "true" : undefined}
+                    className={cn(
+                      "focus-visible:ring-accent font-martian-mono group relative inline-flex items-center gap-1 rounded-sm py-1 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                      active
+                        ? "text-foreground"
+                        : "text-foreground-secondary hover:text-foreground",
+                    )}
+                  >
+                    {link.label}
+                    {dropdown && (
+                      // Fixed up-pointing caret (not a rotating down-caret
+                      // -- the client's own explicit direction: "add a
+                      // arrow icon pointing up"), not the more typical
+                      // dropdown-affordance chevron.
+                      <CaretUp aria-hidden size={12} className="shrink-0" />
+                    )}
+                    {active ? (
+                      // Shared-layout indicator: Framer Motion animates this
+                      // sliding smoothly to whichever link is active, instead of
+                      // just appearing/disappearing. Flat 2px accent bar, no
+                      // glow/shadow -- 04_VISUAL_LANGUAGE.md bans glow effects
+                      // regardless of how subtle.
+                      <motion.span
+                        layoutId="nav-active-indicator"
+                        transition={{
+                          duration: prefersReducedMotion ? 0 : 0.2,
+                          ease: "easeOut",
+                        }}
+                        className="bg-accent absolute inset-x-0 -bottom-1 h-[2px] rounded-full"
+                      />
+                    ) : (
+                      // Hover-only underline, CSS transform only (no Framer
+                      // Motion needed for a plain hover state per
+                      // 13_MOTION_AND_ANIMATION.md's "CSS first" guidance).
+                      // Also triggers on keyboard focus, not just mouse hover.
+                      <span
+                        aria-hidden
+                        className="bg-foreground-secondary absolute inset-x-0 -bottom-1 h-[1.5px] origin-left scale-x-0 rounded-full transition-transform duration-150 ease-out group-hover:scale-x-100 group-focus-visible:scale-x-100"
+                      />
+                    )}
+                  </Link>
+
+                  {dropdown && (
+                    // Panel: invisible + 0 opacity + shifted up 8px at
+                    // rest, `group-hover/item:`/`group-focus-within/item:`
+                    // (the latter for keyboard users tabbing into the
+                    // panel's own links, not just mouse hover) reveals it
+                    // with a soft downward settle -- `invisible` (not just
+                    // `opacity-0`) so it's genuinely unreachable by mouse/
+                    // keyboard while closed, not just hidden-but-still-
+                    // there. `pt-3` on the panel wrapper (not `mt-3`) so
+                    // the hover-target area has no gap between the link
+                    // and the panel that would drop the hover state on the
+                    // way down to it.
+                    <div className="invisible absolute top-full left-0 -translate-y-2 pt-3 opacity-0 transition-all duration-300 ease-out group-hover/item:visible group-hover/item:translate-y-0 group-hover/item:opacity-100 group-focus-within/item:visible group-focus-within/item:translate-y-0 group-focus-within/item:opacity-100">
+                      <div className="bg-panel border-border w-64 border p-2">
+                        {dropdown === "placeholder" ? (
+                          // "Solutions" has no real content anywhere in
+                          // this project yet (no data file, no page copy)
+                          // -- per direct client instruction, an honest
+                          // "Coming soon" placeholder rather than invented
+                          // category names, matching this project's
+                          // standing never-fabricate-content rule.
+                          <p className="text-foreground-muted px-3 py-2 text-sm">
+                            Coming soon
+                          </p>
+                        ) : (
+                          dropdown.map((item) => (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              className="focus-visible:ring-accent text-foreground-secondary hover:bg-surface-hover hover:text-foreground block rounded-sm px-3 py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                            >
+                              {item.label}
+                            </Link>
+                          ))
+                        )}
+                      </div>
+                    </div>
                   )}
-                </Link>
+                </div>
               );
             })}
           </nav>

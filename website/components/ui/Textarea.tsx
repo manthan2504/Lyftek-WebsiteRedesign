@@ -39,7 +39,7 @@ export function Textarea({
         id={inputId}
         rows={rows}
         className={cn(
-          "bg-surface border-border text-foreground placeholder:text-foreground-muted resize-y rounded-sm border px-4 py-2.5 text-sm transition-colors outline-none",
+          "bg-surface border-border text-foreground placeholder:text-foreground-muted w-full resize-y rounded-sm border px-4 py-2.5 text-sm transition-colors outline-none",
           "focus-visible:border-accent focus-visible:ring-accent focus-visible:ring-2 focus-visible:ring-offset-0",
           error && "border-error",
         )}

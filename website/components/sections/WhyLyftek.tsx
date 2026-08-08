@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { animate, motion, useInView, useReducedMotion } from "framer-motion";
 import { DASHBOARD_CONTAINER } from "@/constants/layout";
 
 const fadeUp = {
@@ -11,6 +12,54 @@ const fadeUp = {
     transition: { duration: 0.5, ease: "easeOut" },
   },
 } as const;
+
+/**
+ * Purpose: counts a stat value up from 0 to its real number once, the
+ * moment it scrolls into view -- per direct client request ("live
+ * counting animation of numbers"). Split out as its own component (not
+ * inlined in the STATS.map below) so each of the 4 stats gets its own
+ * independent `useInView` trigger/ref, which a single shared hook call
+ * couldn't provide.
+ *
+ * Parses `value` (e.g. "350+") into a numeric target (350) and a suffix
+ * ("+") via regex rather than storing them as separate fields on `Stat` --
+ * keeps the `STATS` array itself simple, plain client-facing strings, with
+ * no risk of the numeric/suffix pair drifting out of sync with the display
+ * string.
+ *
+ * `once: true` on `useInView` -- this is a one-time entrance count-up, not
+ * a looping/repeating animation; matches 13_MOTION_AND_ANIMATION.md's
+ * "one-time entrance, then stillness" model already used for this
+ * section's fade-up (`fadeUp` above). `useReducedMotion()` skips the tween
+ * entirely and renders the final value immediately -- counting animations
+ * are exactly the kind of motion `prefers-reduced-motion` exists for.
+ */
+function AnimatedStatValue({ value }: { value: string }) {
+  const match = value.match(/^(\d+)(.*)$/);
+  const target = match ? Number(match[1]) : 0;
+  const suffix = match ? match[2] : "";
+  const prefersReducedMotion = useReducedMotion();
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref, { once: true, margin: "-80px" });
+  const [display, setDisplay] = useState(prefersReducedMotion ? target : 0);
+
+  useEffect(() => {
+    if (!isInView || prefersReducedMotion) return;
+    const controls = animate(0, target, {
+      duration: 1.6,
+      ease: "easeOut",
+      onUpdate: (latest) => setDisplay(Math.round(latest)),
+    });
+    return () => controls.stop();
+  }, [isInView, prefersReducedMotion, target]);
+
+  return (
+    <span ref={ref}>
+      {display}
+      {suffix}
+    </span>
+  );
+}
 
 /**
  * Purpose: homepage credibility section -- the qualitative "why us" case
@@ -25,27 +74,20 @@ const fadeUp = {
  * warns against. One section, two registers of the same claim (qualitative
  * prose + a numeric strip), reads as one considered statement instead.
  *
- * CONTENT-ACCURACY GATE -- why 3 of the 4 live-site stats are omitted:
- * the live site's "Our Achievements" block animates 4 counters up from
- * "0+" (Satisfied Clients / Successful Projects / Team Strength / Years of
- * Experience). Only "Years of Experience" has an observable, internally
- * consistent real value -- "12+ Years" / "Since 2011" appears as STATIC
- * text in two separate places on the live site, so it's confirmed, not
- * read off a counter mid-animation. The other three are JS-driven counters
- * with no static fallback markup -- their real final values were never
- * actually observed, only their animated-from-zero starting state. Inventing
- * plausible-looking numbers for "Satisfied Clients," "Successful Projects,"
- * or "Team Strength" would ship fabricated data under the client's name.
- *
- * Of the two safe options weighed (see task brief): (a) ship ONLY the
- * confirmed "12+ Years" stat and omit the other three slots entirely, or
- * (b) ship all four labels with the unconfirmed three rendered as a styled
- * "--" pending placeholder. THIS BUILD USES (a) -- a single-stat strip reads
- * as a deliberate, confident statement; three visible "--" placeholders next
- * to one real number would read as an unfinished page shipped to production.
- * When the client confirms the other three figures, extend `STATS` below
- * (currently a single-entry array specifically so that extension is a
- * data-only change, not a structural rewrite of this component).
+ * CONTENT-ACCURACY GATE (2026-08-07, resolved 2026-08-08) -- why this
+ * originally shipped with only 1 of 4 live-site stats: the live site's
+ * "Our Achievements" block animates 4 counters up from "0+" (Satisfied
+ * Clients / Successful Projects / Team Strength / Years of Experience).
+ * At the time, only "Years of Experience" had an observable, internally
+ * consistent real value ("12+ Years" / "Since 2011" appears as STATIC text
+ * in two separate places on the live site); the other three were JS-driven
+ * counters with no static fallback markup, so their real final values had
+ * never actually been observed -- inventing plausible-looking numbers for
+ * them would have shipped fabricated data under the client's name. Resolved
+ * 2026-08-08: the client supplied the other three figures directly (350+
+ * Satisfied Clients, 550+ Successful Projects, 25+ Team Strength) -- `STATS`
+ * now has all 4 entries, still not fabricated, just client-provided instead
+ * of scraped off a mid-animation counter.
  *
  * CONTAINER/BACKGROUND RULE -- same one Footer.tsx's docblock documents
  * (and the same mistake corrected there earlier this session): this
@@ -101,10 +143,18 @@ interface Stat {
   label: string;
 }
 
-// Deliberately a single entry -- see the content-accuracy gate note above.
-// Extend this array (not the JSX) once the client confirms real figures for
-// Satisfied Clients / Successful Projects / Team Strength.
-const STATS: Stat[] = [{ value: "12+", label: "Years of Experience" }];
+// 2026-08-08: extended from the single-entry array the content-accuracy
+// gate note above describes -- the client supplied these three figures
+// directly (Satisfied Clients / Successful Projects / Team Strength),
+// resolving the exact "when the client confirms" condition that note was
+// written for. Not fabricated -- client-provided data, same standard
+// "Years of Experience" already met.
+const STATS: Stat[] = [
+  { value: "350+", label: "Satisfied Clients" },
+  { value: "550+", label: "Successful Projects" },
+  { value: "25+", label: "Team Strength" },
+  { value: "12+", label: "Years of Experience" },
+];
 
 const QUALITATIVE_POINTS = [
   "Certified professionals with deep domain expertise across the technologies we deliver.",
@@ -159,29 +209,47 @@ export function WhyLyftek() {
           </ul>
 
           {/*
-            Stat strip -- one bordered row, divided (not gridded into cards)
-            by `divide-x`/`border-divider`. Value in `font-rinter` per the
-            locked trio's "Big heading and numbers: Rinter" rule (2026-08-07
-            -- was `font-mono`/Geist Mono under the earlier industrial-
-            brutalist-ui telemetry treatment); the sub-label underneath it
-            stays `font-mono` -- it's a caption, not a number, and doesn't
-            fit any of the trio's three categories. Only one entry currently
-            populates `STATS` (see docblock).
+            Stat strip -- now 4 entries (2026-08-08, see docblock). Was one
+            `divide-x`/`border-t` bordered row (worked fine for a single
+            stat); switched to a plain gapped grid instead of trying to
+            stretch `divide-x`/`divide-y` across a wrapping 2x2/1x4 layout,
+            which produces broken-looking divider stubs at the wrap point.
+            The bordered row's own `border-t` was removed entirely per
+            direct client feedback (it collided with "12+").
+
+            Follow-up, same day: the 4 stats now live inside ONE rectangle
+            -- `border border-divider` (the same neutral grey as every
+            other divider on the page, not the lime accent), `w-full` so
+            it spans this panel's full content width, which already equals
+            `DASHBOARD_CONTAINER` (Navbar's exact width -- this section's
+            outer `bg-panel` div is already boxed to that same constant,
+            see the docblock above). No internal partition lines between
+            the 4 stats -- `gap-x-8 gap-y-10` alone provides the even
+            spacing the client asked for, nothing dividing one stat from
+            the next.
           */}
-          <div className="border-divider divide-divider mt-10 grid grid-cols-1 divide-y border-t sm:grid-cols-3 sm:divide-x sm:divide-y-0 lg:mt-14">
-            {STATS.map((stat) => (
-              <div
-                key={stat.label}
-                className="flex flex-col gap-1 py-6 first:pt-0 sm:px-8 sm:py-0 sm:first:pl-0"
-              >
-                <span className="font-rinter text-foreground text-4xl tracking-tight lg:text-5xl">
-                  {stat.value}
-                </span>
-                <span className="text-foreground-muted font-mono text-xs font-medium tracking-[0.2em] uppercase">
-                  {stat.label}
-                </span>
-              </div>
-            ))}
+          <div className="border-divider mt-10 w-full border p-8 lg:mt-14 lg:p-10">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-4">
+              {STATS.map((stat) => (
+                <div key={stat.label} className="flex flex-col gap-1">
+                  {/*
+                    2026-08-08, direct client request ("make those numbers
+                    in a brand lime color with a live counting animation"):
+                    text-foreground -> text-accent (the same lime token as
+                    the eyebrow dot/"complexity." in Hero -- this site's one
+                    brand accent color, not a new one), plain text ->
+                    AnimatedStatValue (see that component's docblock above
+                    for the count-up mechanics).
+                  */}
+                  <span className="font-rinter text-accent text-4xl tracking-tight lg:text-5xl">
+                    <AnimatedStatValue value={stat.value} />
+                  </span>
+                  <span className="text-foreground-muted font-mono text-xs font-medium tracking-[0.2em] uppercase">
+                    {stat.label}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </motion.div>
       </div>

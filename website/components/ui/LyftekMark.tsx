@@ -10,6 +10,18 @@ interface LyftekMarkProps extends SVGProps<SVGSVGElement> {
   strokeBottom?: string;
   strokeWidth?: number;
   /**
+   * Renders both shapes as solid fills (`strokeTop`/`strokeBottom` become
+   * fill colors, no stroke) instead of the default outline-stroke
+   * treatment. Added 2026-08-08 for the Footer's giant wordmark preview --
+   * paired at large scale next to bold solid display type, an outline
+   * stroke (even a thick one) reads as a thin sketch next to a heavy solid
+   * letterform; a genuine weight mismatch, not a style choice. Default
+   * `false` -- every other consumer (ContactCTA, Footer's own smaller
+   * corner-bracket-adjacent use elsewhere) keeps the original outline look
+   * unchanged.
+   */
+  filled?: boolean;
+  /**
    * Non-uniform horizontal stretch applied to the bottom shape only (1 =
    * unchanged). Left-anchored (`transformOrigin: "left"` + `transformBox:
    * "fill-box"`, so the origin is that path's own bounding box, not the
@@ -45,21 +57,24 @@ export function LyftekMark({
   strokeBottom = "var(--color-accent)",
   strokeWidth = 6,
   bottomScaleX = 1,
+  filled = false,
   ...props
 }: LyftekMarkProps) {
   return (
     <svg viewBox={LYFTEK_MARK_VIEWBOX} fill="none" aria-hidden {...props}>
       <path
         d={LYFTEK_MARK_TOP_PATH}
-        stroke={strokeTop}
-        strokeWidth={strokeWidth}
+        fill={filled ? strokeTop : "none"}
+        stroke={filled ? "none" : strokeTop}
+        strokeWidth={filled ? undefined : strokeWidth}
         strokeLinejoin="round"
         strokeLinecap="round"
       />
       <path
         d={LYFTEK_MARK_BOTTOM_PATH}
-        stroke={strokeBottom}
-        strokeWidth={strokeWidth}
+        fill={filled ? strokeBottom : "none"}
+        stroke={filled ? "none" : strokeBottom}
+        strokeWidth={filled ? undefined : strokeWidth}
         strokeLinejoin="round"
         strokeLinecap="round"
         style={
