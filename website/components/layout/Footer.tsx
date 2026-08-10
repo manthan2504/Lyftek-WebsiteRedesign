@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef, type PointerEvent as ReactPointerEvent } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "@phosphor-icons/react";
 import { LyftekMark } from "@/components/ui/LyftekMark";
@@ -113,35 +112,6 @@ const COMPANY_LINKS = NAV_LINKS.filter((link) => link.href !== "/");
  * reconfirmation before launch, not assumed permanently correct.
  */
 export function Footer() {
-  // 2026-08-08, direct correction on the gradient hover ("its cutting our
-  // logo when hovered, im asking based on our pointer only that area
-  // would have a gradient rest part text as it is white"): the previous
-  // version revealed the brand-color gradient across the ENTIRE word on
-  // any hover -- wrong read of the request, and the abrupt whole-word
-  // color shift right where "L" meets the icon was what read as
-  // "cutting." What was actually wanted is a cursor-following spotlight:
-  // only a small circular area around the pointer shows the gradient,
-  // the rest of the word stays solid white.
-  //
-  // Implementation: two stacked, identically-positioned copies of
-  // "Lyftek" (see the render below) -- a real, always-visible white base,
-  // and a gradient-colored duplicate on top whose visibility is limited
-  // to a small circle via a `radial-gradient` `mask-image` centered on
-  // the pointer. The mask position updates via a raw DOM `style.
-  // setProperty` call (not React state) so the circle tracks the mouse
-  // at full pointer-event frequency without triggering a React re-render
-  // per pixel of movement -- a re-render-per-mousemove approach would
-  // visibly lag behind the cursor at this frequency.
-  const wordmarkRef = useRef<HTMLDivElement>(null);
-
-  function handleWordmarkPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
-    const node = wordmarkRef.current;
-    if (!node) return;
-    const rect = node.getBoundingClientRect();
-    node.style.setProperty("--pointer-x", `${event.clientX - rect.left}px`);
-    node.style.setProperty("--pointer-y", `${event.clientY - rect.top}px`);
-  }
-
   return (
     <footer className="mb-8 lg:mb-12">
       {/*
@@ -431,64 +401,16 @@ export function Footer() {
             strokeBottom="var(--color-accent)"
           />
           {/*
-            2026-08-08, gradient hover, corrected: first version revealed
-            the brand-color gradient across the whole word on hover --
-            direct follow-up ("its cutting our logo when hovered, im
-            asking based on our pointer only that area would have a
-            gradient rest part text as it is white") asked for a
-            cursor-following spotlight instead. See the `wordmarkRef`/
-            `handleWordmarkPointerMove` comment above the component for
-            the pointer-tracking mechanics.
-
-            Two stacked, identically-sized/positioned copies of "Lyftek":
-            - Base (this one): plain solid white, always visible, the
-              actual accessible text.
-            - Overlay (directly below, `aria-hidden`): the gradient-text
-              technique from before (gradient background + `bg-clip-text`
-              + `text-transparent`), but ALSO given a `radial-gradient`
-              `mask-image` centered on `--pointer-x`/`--pointer-y` (set by
-              the pointermove handler) -- only a ~110px circle around the
-              cursor is unmasked, so only that small area of the gradient
-              layer is visible, sitting on top of (and therefore replacing
-              the view of) the white base text directly beneath it. Faded
-              in/out on hover via the shared `group`/`group-hover` on the
-              wrapping row, so there's no visible circle floating over the
-              text before the pointer ever reaches it.
+            2026-08-09, client follow-up: the pointer-tracking gradient
+            hover effect (see git history) was removed entirely --
+            "keep simple lyftek logo text." Plain static text, no hover
+            state, no ref/pointermove handler, matching how this element
+            already behaved otherwise (not a link -- see the giant-wordmark
+            docblock above for why this stays plain text, not wired to `/`).
           */}
-          {/*
-            2026-08-08, direct follow-up ("when hovered a text cursor
-            appears, keep normal pointer cursor behaviour only"): browsers
-            default to `cursor: text` (the I-beam) over plain text content,
-            since it's normally selectable. This element isn't a link (a
-            deliberate decision made earlier -- see the giant-wordmark
-            docblock above for why it stays plain text, not wired to `/`),
-            so `cursor-pointer` (the hand, implying "clickable") would be
-            the wrong fix too -- `cursor-default` restores the plain arrow,
-            matching what a non-interactive page element should show.
-          */}
-          <div
-            ref={wordmarkRef}
-            onPointerMove={handleWordmarkPointerMove}
-            className="group relative cursor-default"
-          >
-            <p className="font-rinter text-foreground leading-[0.9] font-extrabold tracking-tight">
-              Lyftek
-            </p>
-            <p
-              aria-hidden
-              className="font-rinter [background-clip:text] [-webkit-background-clip:text] pointer-events-none absolute inset-0 leading-[0.9] font-extrabold tracking-tight text-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-              style={{
-                backgroundImage:
-                  "linear-gradient(90deg, var(--color-accent), color-mix(in srgb, var(--color-foreground-muted) 55%, transparent), var(--color-accent-foreground))",
-                maskImage:
-                  "radial-gradient(110px circle at var(--pointer-x, 50%) var(--pointer-y, 50%), black, transparent 70%)",
-                WebkitMaskImage:
-                  "radial-gradient(110px circle at var(--pointer-x, 50%) var(--pointer-y, 50%), black, transparent 70%)",
-              }}
-            >
-              Lyftek
-            </p>
-          </div>
+          <p className="font-rinter text-foreground leading-[0.9] font-extrabold tracking-tight">
+            Lyftek
+          </p>
         </div>
 
         {/*
