@@ -97,17 +97,45 @@ Evaluate and refine where appropriate.
 
 ## Neutral Foundation
 
-| Role | Color |
-|-------|--------|
-| Primary Background | #1D1D1D |
-| Secondary Background | #25272B |
-| Surface / Cards | #2F3338 |
-| Borders | #3E434A |
-| Dividers | #4B525A |
+**Updated 2026-08-10 to match the shipped tokens.** A consistency audit found
+this table had drifted from `website/app/globals.css`: it still listed the
+original `#1D1D1D` background, and it was missing the two `--panel` tokens
+entirely, which have been live since the boxed-panel treatment was
+introduced. Corrected below — the "Live token" column is the authority, since
+that is what actually renders.
 
-The neutral palette should provide depth without relying on pure black.
+| Role | Live token | Value | Note |
+|-------|-----------|--------|------|
+| Primary Background | `--background` | **#0A0A0A** (was #1D1D1D) | **Revised.** Client asked to unify the page background with the boxed-panel colour once the grey content sections sat next to black panels; the two are now the same pure black. |
+| Boxed panel surface | `--panel` | **#0A0A0A** | **Newly documented.** The `bg-panel` used by Hero/AboutHero/ContactSection/WhyLyftek/WhyDifferent/Footer. Identical to `--background` since the unification above — panels now read as distinct through their `border-x` rails and `border-t` hairlines, not through colour. |
+| Boxed panel border | `--panel-border` | **#2A2D31** | **Newly documented.** Distinct from `--border`; used for panel edges. |
+| Secondary Background | `--surface` | #25272B | Unchanged. |
+| Surface / Cards | `--surface-hover` | #2F3338 | Unchanged. |
+| Borders | `--border` | #3E434A | Unchanged. The rails/hairlines token. |
+| Dividers | `--divider` | #4B525A | Unchanged. |
+
+The neutral palette should provide depth without relying on colour alone;
+since the background/panel unification, separation comes from hairline
+borders rather than from tonal steps.
 
 Large areas should feel calm rather than visually heavy.
+
+### Tokens defined but currently unused
+
+The same audit found four tokens with **zero consumers** anywhere in
+`components/`. They are deliberately kept (they cost nothing and the
+semantic set should stay complete), but nobody should assume they are
+"in use" or that their values have ever been reviewed against a real
+rendered surface:
+
+- `--accent-surface` (#14B8A6) — was the Hero's background glow tint; that
+  glow was replaced by the `Threads` WebGL background, which takes its
+  colour from `--accent-hover` instead. No current consumer.
+- `--success` (#22C55E), `--warning` (#F59E0B), `--info` (#38BDF8) — no
+  component renders a success/warning/info state yet.
+
+`--error` (#EF4444) **is** in use — `Input`, `Select`, and `Textarea` all
+render `border-error` / `text-error` in their error state.
 
 ---
 

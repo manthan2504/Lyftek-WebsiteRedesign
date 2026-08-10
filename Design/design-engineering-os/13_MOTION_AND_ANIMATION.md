@@ -327,6 +327,72 @@ Accessibility always takes priority.
 
 ---
 
+## Documented exception — the Hero's Threads background (2026-08-10)
+
+**One element on this site deliberately ignores `prefers-reduced-motion`:**
+the homepage Hero's WebGL wave background (`components/ui/Threads.tsx` as
+rendered by `components/sections/Hero.tsx`). It animates continuously for
+every visitor, including those whose OS or browser requests reduced motion.
+
+This is an **explicit client decision**, taken on 2026-08-10 with the
+trade-off stated plainly, and it knowingly departs from this section and
+from 99_GLOBAL_RULES.md's "accessibility is mandatory / never sacrifice
+accessibility for aesthetics". It is recorded here rather than left as an
+undocumented gap in the code so that:
+
+- a future session does not "fix" it back on the assumption it was an
+  oversight, and
+- it is not mistaken for a precedent. **Everything else on this site still
+  honours the preference** -- section entrance animations (via
+  `MotionConfig reducedMotion="user"`, see components/layout/
+  motion-provider.tsx), the Navbar mobile menu, the Select dropdown, and
+  WhyLyftek's stat count-up all continue to respect it.
+
+**Context worth keeping**, because it explains why the question came up at
+all: the client reported the waves as "missing", which traced to their
+Windows Server development VM shipping with "Adjust for best performance".
+That setting disables UI animations, and Chromium maps the flag directly to
+`prefers-reduced-motion: reduce` -- so that one machine was receiving the
+reduced-motion treatment while real visitors had been seeing the animation
+throughout. The VM setting was corrected as well; this exception is
+belt-and-braces rather than the fix for that symptom.
+
+**The route back**, if this is ever reversed: `Threads` accepts an `animate`
+prop. Passing `animate={false}` renders a single static frame of the
+identical shader -- the artwork without the movement -- at zero ongoing
+cost.
+
+## Performance guard on the same background (2026-08-10, measured)
+
+Separately from the accessibility exception above, Hero DOES fall back to
+that static frame on devices with **no GPU**, via
+`hooks/useIsSoftwareRenderer.ts`. Measured on this project's own GPU-less VM
+(QEMU QXL adapter, 0 VRAM, 4 cores), production build:
+
+| Page | Before guard | After guard |
+|---|---|---|
+| `/about` (no WebGL) | 60.0 fps | 60.0 fps |
+| `/` (Threads) | **2.2 fps** (457ms/frame) | **60.0 fps** (16.7ms/frame) |
+
+Chromium falls back to SwiftShader (a CPU rasterizer) when there is no GPU,
+and a full-screen per-pixel-looping fragment shader is simply the wrong
+thing to ask a CPU to do 60 times a second. The shader is not at fault and
+runs fine on hardware.
+
+**This is a capability check, not a preference check** -- keep the two
+distinct when reading the code. Visitors with a working GPU get the
+continuous animation regardless of their reduced-motion setting, exactly as
+the client decided. Only devices that physically cannot draw it at speed get
+the still frame, which is strictly better for them than a 2fps hero.
+
+**Also worth recording for whoever next reviews performance:** the same
+measurement run showed `next dev` is a poor guide to real performance here
+-- `/about` measured 9.6 fps in dev against 60.0 fps in a production build
+on the same machine. Judge performance from `npm run build && npm start`,
+never from the dev server.
+
+---
+
 # Timing & Easing
 
 Research industry standards before implementation.

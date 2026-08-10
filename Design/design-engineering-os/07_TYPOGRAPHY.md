@@ -311,6 +311,37 @@ Replaces the system above in full. **Locked** — do not re-litigate without exp
 
 ---
 
+# Locked Scale (2026-08-10) — the actual sizes, not just the faces
+
+The trio above settles WHICH typeface each role uses. It never settled the
+SIZES, and a consistency audit on 2026-08-10 found real drift as a result:
+section H2s were running three different responsive ramps, uppercase mono
+micro-labels four different letter-spacings, and body copy two different
+base sizes. All of it is now unified to the table below. **Treat these as
+the locked values — match them when building a new section rather than
+picking sizes by eye.**
+
+| Role | Classes | Notes |
+|---|---|---|
+| Section eyebrow | Use the `SectionEyebrow` component — do NOT hand-write it | `font-martian-mono text-xs font-semibold tracking-[0.28em] uppercase`, `text-foreground-muted`, preceded by a lime `h-2 w-2` square. Was duplicated verbatim in 11 places before extraction. |
+| Page title (H1) | `font-rinter text-5xl sm:text-6xl lg:text-7xl tracking-tight` | AboutHero, ContactSection. |
+| Homepage Hero H1 | `font-rinter text-4xl sm:text-6xl lg:text-8xl font-extrabold tracking-tight` | **Deliberate exception, LOCKED** — the homepage display moment. `font-extrabold` here is synthetic (Rinter ships Regular only) and was accepted on screenshot review. Do not copy this ramp to other pages. |
+| Section heading (H2) | `font-rinter text-3xl sm:text-4xl tracking-tight` | **Every** section, no exceptions. Services previously carried a fourth step (`lg:text-5xl`); removed 2026-08-10 as an undocumented one-off. |
+| Sub-heading (H2 inside a column) | `font-rinter text-2xl tracking-tight` | e.g. ContactSection's "Send us a message." — subordinate to the page H1 beside it. |
+| Card / item title (H3) | `font-rinter text-lg tracking-tight` | Services pillar cards, TeamSection member names. |
+| Body copy | `text-lg leading-relaxed`, `text-foreground-secondary` | From the smallest breakpoint up — NOT `text-base lg:text-lg`, which two sections used and which made the same role render 16px vs 18px below `lg`. |
+| Small body / card copy | `text-sm leading-relaxed`, `text-foreground-muted` | Services card descriptions. |
+| Uppercase mono micro-label | `font-mono text-xs font-semibold tracking-[0.15em] uppercase`, `text-foreground-muted` | Form field labels AND section micro-labels. One value sitewide. Previously ranged across `tracking-[0.15em]`, `[0.2em]`, and `tracking-wide` (0.025em) — a 6x spread for one visual role. |
+| Mono data value (not a label) | `font-mono text-sm tracking-wide`, `text-foreground-muted` | Team member titles, quote attributions, "Since 2011". Not uppercase — these are content, not labels. |
+| Footer column heading | `font-martian-mono text-sm font-semibold`, `text-foreground` | **Deliberately NOT the eyebrow style** — these are `<h3>` navigation headings that need to read as headings; tracked-out uppercase would hurt footer legibility. |
+
+**Vertical rhythm for a section opener:** eyebrow → `mt-4` → H2 → `mt-6` →
+body. Do not put a `gap-*` on the flex parent as well: two sections did, which
+silently added 8px to every step and made their rhythm 24px/32px while the
+rest of the site ran 16px/24px.
+
+---
+
 # Final Principle
 
 Typography should make visitors feel that Lyftek is an experienced engineering organization.

@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CaretUp, List, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
+import { SectionEyebrow } from "@/components/ui/SectionEyebrow";
 import { DASHBOARD_CONTAINER } from "@/constants/layout";
 import { NAV_LINKS, PRIMARY_CTA } from "@/constants/navigation";
 import { SERVICE_PILLARS } from "@/constants/services";
@@ -110,6 +111,37 @@ export function Navbar() {
   const prefersReducedMotion = useReducedMotion();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  /*
+   * Suppresses the desktop mega-menu after a pointer click on one of its
+   * links, until the pointer leaves and re-enters a nav item.
+   *
+   * THE BUG THIS FIXES (reported 2026-08-10, reproduced before fixing): the
+   * mega-menu is opened purely in CSS, by `group-hover/item` OR
+   * `group-focus-within/item`. Clicking a link inside it navigates but
+   * leaves that link focused -- and because the link is a descendant of the
+   * group, `focus-within` stays true, so the panel stayed open even after
+   * the pointer moved away. Measured: after clicking a solution and moving
+   * the mouse to the far side of the page, the panel was still
+   * `visibility: visible; opacity: 1`. The only thing that closed it was
+   * clicking somewhere else, which is exactly the workaround the client
+   * described ("I have to tap somewhere random so that it would
+   * disappear").
+   *
+   * Two things are needed, and hover alone fixes neither:
+   *   1. release the focus that pins `focus-within` open, and
+   *   2. close the panel straight away on click, rather than leaving it up
+   *      until the pointer happens to move off it.
+   *
+   * KEYBOARD USERS ARE DELIBERATELY EXCLUDED from both. The handler below
+   * only runs for real pointer clicks (`event.detail > 0`; keyboard
+   * activation of a link reports `detail === 0`). Blurring on an Enter
+   * keypress would throw focus to <body> and lose the user's place in the
+   * menu, and unmounting the panel out from under a focused element is
+   * worse still. For keyboard navigation the existing behaviour is already
+   * correct: Tab out of the menu and `focus-within` releases on its own.
+   */
+  const [isDropdownSuppressed, setIsDropdownSuppressed] = useState(false);
+
   // Close the mobile menu on route change. Adjusted during render (React's
   // recommended pattern for state that must reset when a prop changes)
   // rather than in an effect, which would cause an extra render pass.
@@ -118,6 +150,19 @@ export function Navbar() {
     setRenderedPathname(pathname);
     setIsMobileMenuOpen(false);
   }
+
+  /**
+   * Attach to every link INSIDE a mega-menu panel. Pointer clicks only --
+   * see `isDropdownSuppressed` above for why keyboard activation is left
+   * alone.
+   */
+  const handleDropdownLinkClick = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+  ) => {
+    if (event.detail === 0) return;
+    event.currentTarget.blur();
+    setIsDropdownSuppressed(true);
+  };
 
   const isActiveLink = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -216,11 +261,36 @@ export function Navbar() {
                 <div
                   key={link.href}
                   className={cn("relative", dropdown && "group/item")}
+                  // Re-arms the menu once the pointer leaves this item and
+                  // comes back to it. Without this the panel would stay
+                  // suppressed for the rest of the session after the first
+                  // click. `onMouseEnter` rather than `onMouseLeave`: when
+                  // the panel unmounts under the cursor, whether a
+                  // `mouseleave` fires on this ancestor is not something to
+                  // rely on, whereas a fresh `mouseenter` is unambiguous
+                  // intent to open the menu again.
+                  onMouseEnter={
+                    dropdown ? () => setIsDropdownSuppressed(false) : undefined
+                  }
                 >
                   <Link
                     href={link.href}
                     aria-current={active ? "page" : undefined}
                     aria-haspopup={dropdown ? "true" : undefined}
+                    // The TRIGGER link has the same problem its panel's own
+                    // links had (reported 2026-08-10, second report): it
+                    // sits inside `group/item` too, so clicking "Services"
+                    // or "Solutions" itself left it focused and
+                    // `group-focus-within/item` held the panel open until
+                    // something else was clicked. The first pass at this
+                    // fixed only the links INSIDE the panel and missed the
+                    // two that open it.
+                    //
+                    // Scoped to dropdown triggers via the `dropdown ? ... :
+                    // undefined` guard: the plain nav links (Home, About,
+                    // Careers, Contact) open no panel, so there is nothing
+                    // to close and no reason to take focus off them.
+                    onClick={dropdown ? handleDropdownLinkClick : undefined}
                     className={cn(
                       "focus-visible:ring-accent font-martian-mono group relative inline-flex items-center gap-1 rounded-sm py-1 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
                       active
@@ -339,7 +409,23 @@ export function Navbar() {
                     // opening at this width, not a small popover snapping
                     // in. `invisible` (not just `opacity-0`) keeps it
                     // genuinely unreachable by mouse/keyboard while closed.
-                    <div className="invisible fixed inset-x-0 top-16 z-40 -translate-y-3 opacity-0 transition-all duration-300 ease-out group-hover/item:visible group-hover/item:translate-y-0 group-hover/item:opacity-100 group-focus-within/item:visible group-focus-within/item:translate-y-0 group-focus-within/item:opacity-100">
+                    // `isDropdownSuppressed` forces it shut regardless of
+                    // hover/focus after a pointer click on one of its links
+                    // -- see that state's docblock. Applied as extra
+                    // utilities rather than by unmounting the panel, so the
+                    // closing transition still runs and nothing inside is
+                    // torn out from under the browser mid-interaction.
+                    // `pointer-events-none` matters: without it the
+                    // invisible panel would still swallow clicks aimed at
+                    // the page underneath it.
+                    <div
+                      className={cn(
+                        "invisible fixed inset-x-0 top-16 z-40 -translate-y-3 opacity-0 transition-all duration-300 ease-out",
+                        isDropdownSuppressed
+                          ? "pointer-events-none"
+                          : "group-hover/item:visible group-hover/item:translate-y-0 group-hover/item:opacity-100 group-focus-within/item:visible group-focus-within/item:translate-y-0 group-focus-within/item:opacity-100",
+                      )}
+                    >
                       <div
                         className={`bg-panel border-border border-t border-b border-x ${DASHBOARD_CONTAINER}`}
                       >
@@ -357,15 +443,7 @@ export function Navbar() {
                               tracked label) -- same eyebrow treatment every
                               other section on this site uses.
                             */}
-                            <div className="flex items-center gap-2">
-                              <span
-                                aria-hidden
-                                className="bg-accent h-2 w-2 shrink-0"
-                              />
-                              <p className="text-foreground-muted font-martian-mono text-xs font-semibold tracking-[0.28em] uppercase">
-                                Our Services
-                              </p>
-                            </div>
+                            <SectionEyebrow>Our Services</SectionEyebrow>
 
                             {/*
                               2x4 grid, per direct client spec -- split into
@@ -413,6 +491,7 @@ export function Navbar() {
                                     <Link
                                       key={service.href}
                                       href={service.href}
+                                      onClick={handleDropdownLinkClick}
                                       className="group/service focus-visible:ring-accent -m-2 flex items-start gap-4 rounded-sm p-2 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                                     >
                                       <service.icon
@@ -461,15 +540,7 @@ export function Navbar() {
                           // that's the real shape of the two catalogs, not
                           // a layout bug.
                           <div className="px-6 py-10 md:px-8 lg:p-12">
-                            <div className="flex items-center gap-2">
-                              <span
-                                aria-hidden
-                                className="bg-accent h-2 w-2 shrink-0"
-                              />
-                              <p className="text-foreground-muted font-martian-mono text-xs font-semibold tracking-[0.28em] uppercase">
-                                Our Solutions
-                              </p>
-                            </div>
+                            <SectionEyebrow>Our Solutions</SectionEyebrow>
 
                             <div className="divide-border mt-8 grid grid-cols-1 gap-y-10 sm:grid-cols-2 sm:divide-x sm:gap-y-0">
                               {SOLUTION_CATEGORIES.map(
@@ -513,10 +584,27 @@ export function Navbar() {
                                       {category.label}
                                     </p>
                                     <ul className="flex flex-col gap-3">
+                                      {/*
+                                        Keyed on `label`, NOT `href`
+                                        (2026-08-10): href stopped being
+                                        unique once the four Healthcare
+                                        entries without source content were
+                                        all pointed at `/solutions` rather
+                                        than at detail pages that would have
+                                        had to be invented -- see
+                                        constants/solutions.ts. React logged
+                                        a duplicate-key warning and is free
+                                        to drop or duplicate siblings that
+                                        share a key. Labels are unique and
+                                        are the real identity of an entry
+                                        here; the destination is incidental
+                                        and already changed once.
+                                      */}
                                       {category.items.map((item) => (
-                                        <li key={item.href}>
+                                        <li key={item.label}>
                                           <Link
                                             href={item.href}
+                                            onClick={handleDropdownLinkClick}
                                             className="group/solution focus-visible:ring-accent text-foreground-secondary hover:text-accent -m-2 block rounded-sm p-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                                           >
                                             {item.label}

@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { SectionEyebrow } from "@/components/ui/SectionEyebrow";
 import {
   DASHBOARD_CONTAINER,
   PANEL_CONTAINER_NESTED,
@@ -244,8 +245,6 @@ function pillarBorderClasses(index: number, total: number) {
  * animated variant applied at all, rather than a paused-but-present one.
  */
 export function Services() {
-  const prefersReducedMotion = useReducedMotion();
-
   return (
     // 2026-08-07: border-t moved here (onto the section that owns the
     // py-24/lg:py-32 padding) after the client flagged it colliding with
@@ -275,17 +274,19 @@ export function Services() {
         className={`border-border border-t border-x py-24 lg:py-32 ${DASHBOARD_CONTAINER}`}
       >
       <div className={`px-6 md:px-8 ${PANEL_CONTAINER_NESTED}`}>
+        {/*
+          `initial="hidden"` unconditionally -- reduced motion is handled
+          sitewide by MotionProvider now; branching it here per-section is
+          what caused a hydration mismatch (see motion-provider.tsx).
+        */}
         <motion.div
-          initial={prefersReducedMotion ? false : "hidden"}
+          initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
           variants={container}
         >
-          <motion.div variants={item} className="flex items-center gap-2">
-            <span aria-hidden className="bg-accent h-2 w-2 shrink-0" />
-            <p className="text-foreground-muted font-martian-mono text-xs font-semibold tracking-[0.28em] uppercase">
-              What We Do
-            </p>
+          <motion.div variants={item}>
+            <SectionEyebrow>What We Do</SectionEyebrow>
           </motion.div>
 
           {/*
@@ -309,7 +310,27 @@ export function Services() {
           */}
           <motion.h2
             variants={item}
-            className="font-rinter text-foreground mt-4 max-w-3xl text-3xl tracking-tight sm:text-4xl lg:max-w-none lg:text-5xl"
+            // 2026-08-10 consistency pass: `lg:text-5xl` dropped. This was
+            // the only section H2 on the site with a third size step, so at
+            // desktop it rendered 48px against every other section's 36px.
+            // Nothing in the design system defines a "primary section
+            // heading" tier that would earn that -- 07_TYPOGRAPHY.md asks
+            // for the opposite ("avoid excessive variation; consistency
+            // creates confidence"), and one-off emphasis with no rule
+            // behind it is what a consistency audit exists to catch. Every
+            // section H2 is now exactly `text-3xl sm:text-4xl`.
+            //
+            // THIS IS THE ONE CHANGE IN THIS PASS WITH A VISIBLE DESKTOP
+            // EFFECT -- flagged for the client rather than slipped in. If
+            // the larger Services heading turns out to have been a
+            // deliberate hierarchy choice, restoring it is a one-token
+            // revert; but then it should be documented as a real tier in
+            // 07_TYPOGRAPHY.md and applied by rule, not left as a single
+            // unexplained outlier.
+            //
+            // `lg:max-w-none` stays: the two forced lines fit more easily
+            // at 36px than they did at 48px, so nothing re-wraps.
+            className="font-rinter text-foreground mt-4 max-w-3xl text-3xl tracking-tight sm:text-4xl lg:max-w-none"
           >
             {/*
               2026-08-08, direct client request: forced two-line break
@@ -333,19 +354,24 @@ export function Services() {
             className="border-border mt-14 grid grid-cols-1 border sm:grid-cols-2 lg:mt-16 lg:grid-cols-4"
           >
             {SERVICE_PILLARS.map(
-              ({ label, description, href, icon: ServiceIcon }, index) => (
+              ({ label, description, href, slug, icon: ServiceIcon }, index) => (
                 <a
-                  key={href}
-                  // `id` is the actual anchor TARGET (this card is what
-                  // `href` -- and the Navbar mega-menu's matching entry --
-                  // scroll to); `href.slice(2)` strips the leading `/#`
-                  // that constants/services.ts's hrefs now carry. `href`
-                  // itself pointing at this same card's own anchor is a
-                  // no-op self-link when clicked directly here, which is
-                  // harmless -- the meaningful use of `href` is everywhere
-                  // ELSE it's read from (Navbar, ContactCTA's service
-                  // select).
-                  id={href.slice(2)}
+                  key={slug}
+                  // 2026-08-10: `id` now comes from the explicit `slug`
+                  // field rather than `href.slice(2)`. That slice assumed
+                  // every href began with `/#` -- true while these cards
+                  // were in-page anchors, silently wrong the moment they
+                  // became `/services/<slug>` links, which would have
+                  // produced ids like "ervices/customized-software-
+                  // development". See constants/services.ts.
+                  //
+                  // The id is kept even though nothing in this codebase
+                  // links to it any more: it costs nothing and preserves
+                  // any externally shared `/#slug` link.
+                  //
+                  // `href` now navigates to this service's own detail page
+                  // rather than self-linking to this card.
+                  id={slug}
                   href={href}
                   className={cn(
                     "group border-border focus-visible:ring-accent bg-background relative flex flex-col gap-4 overflow-hidden p-8 focus-visible:ring-2 focus-visible:outline-none lg:p-10",

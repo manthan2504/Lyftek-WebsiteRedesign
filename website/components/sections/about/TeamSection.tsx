@@ -1,7 +1,8 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { User } from "@phosphor-icons/react";
+import { SectionEyebrow } from "@/components/ui/SectionEyebrow";
 import {
   DASHBOARD_CONTAINER,
   PANEL_CONTAINER_NESTED,
@@ -91,15 +92,18 @@ const FOUNDER_QUOTE = {
 };
 
 export function TeamSection() {
-  const prefersReducedMotion = useReducedMotion();
-
   return (
     <section className="bg-background relative">
       <div
         className={`border-border border-t border-x ${DASHBOARD_CONTAINER}`}
       >
+        {/*
+          `initial="hidden"` unconditionally -- reduced motion is handled
+          sitewide by MotionProvider now; branching it here per-section is
+          what caused a hydration mismatch (see motion-provider.tsx).
+        */}
         <motion.div
-          initial={prefersReducedMotion ? false : "hidden"}
+          initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
           variants={fadeUp}
@@ -107,12 +111,7 @@ export function TeamSection() {
         >
           <div className="grid grid-cols-1 gap-16 lg:grid-cols-2 lg:items-center lg:gap-12">
             <div>
-              <div className="flex items-center gap-2">
-                <span aria-hidden className="bg-accent h-2 w-2 shrink-0" />
-                <p className="text-foreground-muted font-martian-mono text-xs font-semibold tracking-[0.28em] uppercase">
-                  Leadership
-                </p>
-              </div>
+              <SectionEyebrow>Leadership</SectionEyebrow>
 
               <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl">
                 Our Team
@@ -143,7 +142,10 @@ export function TeamSection() {
             </div>
 
             <div className="flex flex-col gap-4">
-              <p className="text-foreground-muted font-mono text-xs tracking-wide uppercase">
+              {/* 2026-08-10: `tracking-wide` (0.025em) -> `font-semibold
+                  tracking-[0.15em]`, the site's one uppercase mono
+                  micro-label style. */}
+              <p className="text-foreground-muted font-mono text-xs font-semibold tracking-[0.15em] uppercase">
                 A Message From Our Founder
               </p>
               <blockquote className="border-accent flex flex-col gap-4 border-l-2 pl-6">

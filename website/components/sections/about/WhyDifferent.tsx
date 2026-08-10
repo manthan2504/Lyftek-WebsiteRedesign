@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { SectionEyebrow } from "@/components/ui/SectionEyebrow";
 import {
   DASHBOARD_CONTAINER,
   PANEL_CONTAINER_NESTED,
@@ -73,8 +74,6 @@ const DIFFERENTIATOR_POINTS = [
  * box directly.
  */
 export function WhyDifferent() {
-  const prefersReducedMotion = useReducedMotion();
-
   return (
     // Padding lives on the motion.div with `PANEL_CONTAINER_NESTED`, not
     // on this outer `bg-panel` div -- matching About.tsx/Services.tsx's
@@ -85,25 +84,35 @@ export function WhyDifferent() {
       <div
         className={`bg-panel border-border border-t border-x ${DASHBOARD_CONTAINER}`}
       >
+        {/*
+          `initial="hidden"` unconditionally -- reduced motion is handled
+          sitewide by MotionProvider now; branching it here per-section is
+          what caused a hydration mismatch (see motion-provider.tsx).
+        */}
         <motion.div
-          initial={prefersReducedMotion ? false : "hidden"}
+          initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
           variants={fadeUp}
-          className={`flex flex-col gap-2 px-6 py-16 md:px-8 lg:py-24 ${PANEL_CONTAINER_NESTED}`}
+          // 2026-08-10 consistency pass: `gap-2` removed -- it added 8px on
+          // top of every child's own `mt-*`, making this section's spacing
+          // rhythm 24px/32px against 16px/24px everywhere else. Same fix as
+          // WhyLyftek.tsx, the only other section that had it.
+          className={`flex flex-col px-6 py-16 md:px-8 lg:py-24 ${PANEL_CONTAINER_NESTED}`}
         >
-          <div className="flex items-center gap-2">
-            <span aria-hidden className="bg-accent h-2 w-2 shrink-0" />
-            <p className="text-foreground-muted font-martian-mono text-xs font-semibold tracking-[0.28em] uppercase">
-              Our Approach
-            </p>
-          </div>
+          <SectionEyebrow>Our Approach</SectionEyebrow>
 
-          <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight lg:text-4xl">
+          {/*
+            2026-08-10: `lg:text-4xl` -> `sm:text-4xl`, matching every other
+            section H2's breakpoint (see WhyLyftek.tsx for the full note).
+          */}
+          <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl">
             Why we&apos;re different.
           </h2>
 
-          <p className="text-foreground-secondary mt-6 max-w-3xl text-base leading-relaxed lg:text-lg">
+          {/* 2026-08-10: `text-base lg:text-lg` -> `text-lg`, matching every
+              other section's body copy. */}
+          <p className="text-foreground-secondary mt-6 max-w-3xl text-lg leading-relaxed">
             Most enterprise technology work gets split across specialists
             -- one vendor for software, another for cloud, a third for
             security -- each optimizing their own piece without owning how
@@ -112,7 +121,7 @@ export function WhyDifferent() {
             of code to the system still running years later.
           </p>
 
-          <ul className="text-foreground-secondary mt-6 flex max-w-3xl flex-col gap-3 text-base lg:text-lg">
+          <ul className="text-foreground-secondary mt-6 flex max-w-3xl flex-col gap-3 text-lg leading-relaxed">
             {DIFFERENTIATOR_POINTS.map((point) => (
               <li key={point} className="flex gap-3">
                 <span aria-hidden className="text-accent shrink-0">

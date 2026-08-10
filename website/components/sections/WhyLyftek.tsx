@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { animate, motion, useInView, useReducedMotion } from "framer-motion";
+import { SectionEyebrow } from "@/components/ui/SectionEyebrow";
+import { useHasHydrated } from "@/hooks/useHasHydrated";
 import {
   DASHBOARD_CONTAINER,
   PANEL_CONTAINER_NESTED,
@@ -36,18 +38,44 @@ const fadeUp = {
  * section's fade-up (`fadeUp` above). `useReducedMotion()` skips the tween
  * entirely and renders the final value immediately -- counting animations
  * are exactly the kind of motion `prefers-reduced-motion` exists for.
+ *
+ * HYDRATION (fixed 2026-08-10): the seed used to be
+ * `useState(prefersReducedMotion ? target : 0)`, which is the SAME bug the
+ * sections' `initial` props had (see components/layout/motion-provider.tsx)
+ * -- and a worse flavor of it, because this one mismatches rendered TEXT,
+ * not just a style attribute: the server (where `useReducedMotion()` is
+ * `null`) emitted "0+", while a reduced-motion client emitted "350+" on
+ * first render. MotionProvider cannot reach this one -- it is an imperative
+ * `animate()` call plus React state, never a `motion` component consuming
+ * that context.
+ *
+ * Fixed directly instead, and WITHOUT writing state from an effect (that
+ * shape is banned by this project's ESLint config, `react-hooks/
+ * set-state-in-effect` -- the same rule the Navbar was rewritten around in
+ * an earlier session). `display` now always seeds `0`, matching the server
+ * unconditionally; the final value is DERIVED during render instead, gated
+ * behind `useHasHydrated()` so the server and the hydration render both
+ * still produce "0+". One render later, reduced-motion visitors get the
+ * number outright -- no count-up, same as before -- while everyone else
+ * falls through to the tween below.
  */
 function AnimatedStatValue({ value }: { value: string }) {
   const match = value.match(/^(\d+)(.*)$/);
   const target = match ? Number(match[1]) : 0;
   const suffix = match ? match[2] : "";
   const prefersReducedMotion = useReducedMotion();
+  const hasHydrated = useHasHydrated();
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
-  const [display, setDisplay] = useState(prefersReducedMotion ? target : 0);
+  const [display, setDisplay] = useState(0);
+
+  // Not gated on `isInView`: with no animation to trigger there is nothing
+  // to wait for, and holding the number back until it scrolls into view
+  // would only withhold real content from the visitor.
+  const shown = hasHydrated && prefersReducedMotion ? target : display;
 
   useEffect(() => {
-    if (!isInView || prefersReducedMotion) return;
+    if (prefersReducedMotion || !isInView) return;
     const controls = animate(0, target, {
       duration: 1.6,
       ease: "easeOut",
@@ -58,7 +86,7 @@ function AnimatedStatValue({ value }: { value: string }) {
 
   return (
     <span ref={ref}>
-      {display}
+      {shown}
       {suffix}
     </span>
   );
@@ -176,8 +204,6 @@ const QUALITATIVE_POINTS = [
 ];
 
 export function WhyLyftek() {
-  const prefersReducedMotion = useReducedMotion();
-
   return (
     // 2026-08-07: border-t moved from the inner bg-panel/DASHBOARD_CONTAINER
     // div to this outer section (full width) -- full-page audit after the
@@ -232,28 +258,46 @@ export function WhyLyftek() {
         className={`bg-panel border-border border-t border-x ${DASHBOARD_CONTAINER}`}
       >
         <motion.div
-          initial={prefersReducedMotion ? false : "hidden"}
+          // `initial="hidden"` unconditionally -- reduced motion is handled
+          // sitewide by MotionProvider now; branching it here per-section is
+          // what caused a hydration mismatch (see motion-provider.tsx). The
+          // stat counter above needs its own separate fix -- MotionConfig
+          // can't reach an imperative `animate()` call.
+          initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
           variants={fadeUp}
-          className={`flex flex-col gap-2 px-6 py-16 md:px-8 lg:py-24 ${PANEL_CONTAINER_NESTED}`}
+          // 2026-08-10 consistency pass: `gap-2` removed from this flex
+          // parent. It silently added 8px on top of every child's own
+          // `mt-*`, so this section's eyebrow->heading step was 24px and
+          // heading->body 32px, against 16px/24px everywhere else -- the
+          // margins looked identical to the other sections in the source
+          // while rendering differently. Same fix applied to
+          // WhyDifferent.tsx, the only other section with this parent gap.
+          className={`flex flex-col px-6 py-16 md:px-8 lg:py-24 ${PANEL_CONTAINER_NESTED}`}
         >
-          <div className="flex items-center gap-2">
-            <span aria-hidden className="bg-accent h-2 w-2 shrink-0" />
-            <p className="text-foreground-muted font-martian-mono text-xs font-semibold tracking-[0.28em] uppercase">
-              Why Lyftek
-            </p>
-          </div>
+          <SectionEyebrow>Why Lyftek</SectionEyebrow>
 
           {/*
             2026-08-07, locked trio: font-heading -> font-rinter,
             font-semibold dropped (Regular-only face, see app/layout.tsx).
+
+            2026-08-10: `lg:text-4xl` -> `sm:text-4xl`. Every other section
+            H2 steps up at `sm`; this one waited until `lg`, so between
+            640px and 1023px it rendered 30px while About/Services rendered
+            36px on the same page -- headings visibly stepping up and down
+            while scrolling at tablet widths.
           */}
-          <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight lg:text-4xl">
+          <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl">
             Built on expertise, proven with clients.
           </h2>
 
-          <ul className="text-foreground-secondary mt-6 flex max-w-3xl flex-col gap-3 text-base lg:text-lg">
+          {/*
+            2026-08-10: `text-base lg:text-lg` -> `text-lg`, matching every
+            other section's body copy, which is `text-lg` from the smallest
+            breakpoint up. Added `leading-relaxed` for the same reason.
+          */}
+          <ul className="text-foreground-secondary mt-6 flex max-w-3xl flex-col gap-3 text-lg leading-relaxed">
             {QUALITATIVE_POINTS.map((point) => (
               <li key={point} className="flex gap-3">
                 <span aria-hidden className="text-accent shrink-0">
@@ -300,7 +344,15 @@ export function WhyLyftek() {
                   <span className="font-rinter text-accent text-4xl tracking-tight lg:text-5xl">
                     <AnimatedStatValue value={stat.value} />
                   </span>
-                  <span className="text-foreground-muted font-mono text-xs font-medium tracking-[0.2em] uppercase">
+                  {/*
+                    2026-08-10: was `font-medium tracking-[0.2em]`. Every
+                    other uppercase mono micro-label on the site is
+                    `font-semibold tracking-[0.15em]` (the form primitives
+                    set that convention); this one had its own weight AND
+                    its own tracking for no reason the design system
+                    records.
+                  */}
+                  <span className="text-foreground-muted font-mono text-xs font-semibold tracking-[0.15em] uppercase">
                     {stat.label}
                   </span>
                 </div>

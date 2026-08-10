@@ -1,7 +1,8 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import CardSwap, { Card } from "@/components/ui/CardSwap";
+import { SectionEyebrow } from "@/components/ui/SectionEyebrow";
 import { RequirementCard } from "@/components/ui/RequirementCard";
 import {
   DASHBOARD_CONTAINER,
@@ -112,8 +113,6 @@ const fadeUp = {
  * an oversight specific to this file.
  */
 export function About() {
-  const prefersReducedMotion = useReducedMotion();
-
   return (
     // 2026-08-07: border-t moved from motion.div (PANEL_CONTAINER-width) to
     // this outer full-width section -- full-page audit after the client
@@ -136,20 +135,29 @@ export function About() {
       <div
         className={`border-border border-t border-x ${DASHBOARD_CONTAINER}`}
       >
+        {/*
+          `initial="hidden"` unconditionally -- reduced motion is handled
+          sitewide by MotionProvider now; branching it here per-section is
+          what caused a hydration mismatch (see motion-provider.tsx).
+        */}
         <motion.div
-          initial={prefersReducedMotion ? false : "hidden"}
+          initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
           variants={fadeUp}
           className={`grid grid-cols-1 gap-16 px-6 py-24 md:px-8 lg:grid-cols-2 lg:items-stretch lg:gap-12 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
         >
-        <div className="flex max-w-xl flex-col gap-6">
-          <div className="flex items-center gap-2">
-            <span aria-hidden className="bg-accent h-2 w-2 shrink-0" />
-            <p className="text-foreground-muted font-martian-mono text-xs font-semibold tracking-[0.28em] uppercase">
-              Who We Are
-            </p>
-          </div>
+        {/*
+          2026-08-10 consistency pass: was `flex flex-col gap-6`, which put
+          an even 24px between eyebrow->heading AND heading->body. Every
+          other section on the site paces that rhythm unevenly on purpose --
+          `mt-4` (16px) to the heading, then `mt-6` (24px) to the body -- so
+          the eyebrow reads as attached to its heading rather than floating
+          equidistant between two things. This was the last section still on
+          the old uniform-gap pattern.
+        */}
+        <div className="flex max-w-xl flex-col">
+          <SectionEyebrow>Who We Are</SectionEyebrow>
 
           {/*
             2026-08-07, direct client request ("replace this with rinter
@@ -163,10 +171,10 @@ export function About() {
             here would just trigger the browser's synthetic-bold fallback
             instead of an actually-designed bold cut.
           */}
-          <h2 className="font-rinter text-foreground text-3xl tracking-tight sm:text-4xl">
+          <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl">
             An enterprise technology partner, not another vendor to manage.
           </h2>
-          <p className="text-foreground-secondary text-lg leading-relaxed">
+          <p className="text-foreground-secondary mt-6 text-lg leading-relaxed">
             Lyftek works with enterprise teams on custom software, AI and
             generative AI, automation, cloud, and cybersecurity -- as one
             partner across the full engagement, not a rotating list of

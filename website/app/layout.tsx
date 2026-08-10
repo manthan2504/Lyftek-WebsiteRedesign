@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ThemeProvider } from "@/components/layout/theme-provider";
+import { MotionProvider } from "@/components/layout/motion-provider";
 import "./globals.css";
 
 /**
@@ -159,14 +160,25 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         <ThemeProvider>
           {/*
-            Navbar lives here (not in individual pages) so every route gets
-            it automatically -- global chrome belongs in the layout per
-            components/layout/README.md. Each page's top-level landmark
-            should carry id="main-content" for the Navbar's skip link.
+            MotionProvider carries the sitewide reduced-motion policy
+            (`MotionConfig reducedMotion="user"`). It has to sit above every
+            animated section -- Navbar and Footer included -- because it
+            works through React context: a `motion` component outside it
+            falls back to framer-motion's default `"never"` and would keep
+            animating for visitors who asked not to be moved. See that
+            file's docblock for the hydration bug this replaced.
           */}
-          <Navbar />
-          {children}
-          <Footer />
+          <MotionProvider>
+            {/*
+              Navbar lives here (not in individual pages) so every route gets
+              it automatically -- global chrome belongs in the layout per
+              components/layout/README.md. Each page's top-level landmark
+              should carry id="main-content" for the Navbar's skip link.
+            */}
+            <Navbar />
+            {children}
+            <Footer />
+          </MotionProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { SectionEyebrow } from "@/components/ui/SectionEyebrow";
 import { DASHBOARD_CONTAINER } from "@/constants/layout";
 import { AboutHeroIllustration } from "./AboutHeroIllustration";
 
@@ -111,25 +112,27 @@ const item = {
  * boundary, per the same follow-up ("move it slightly left").
  */
 export function AboutHero() {
-  const prefersReducedMotion = useReducedMotion();
-
   return (
     <section
       className={`bg-panel border-border relative border-x ${DASHBOARD_CONTAINER}`}
     >
       <div className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-center px-6 py-16 md:px-8 lg:py-20">
+        {/*
+          `initial="hidden"` unconditionally -- NOT branched on
+          `useReducedMotion()`, which is what caused a hydration mismatch
+          here (this section was the one the error first surfaced on).
+          Reduced motion is now handled sitewide by MotionProvider; see
+          components/layout/motion-provider.tsx for the full reasoning.
+        */}
         <motion.div
-          initial={prefersReducedMotion ? false : "hidden"}
+          initial="hidden"
           animate="visible"
           variants={container}
           className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16"
         >
           <div className="flex flex-col items-start text-left">
-            <motion.div variants={item} className="flex items-center gap-2">
-              <span aria-hidden className="bg-accent h-2 w-2 shrink-0" />
-              <p className="text-foreground-muted font-martian-mono text-xs font-semibold tracking-[0.28em] uppercase">
-                Who We Are
-              </p>
+            <motion.div variants={item}>
+              <SectionEyebrow>Who We Are</SectionEyebrow>
             </motion.div>
 
             <motion.h1

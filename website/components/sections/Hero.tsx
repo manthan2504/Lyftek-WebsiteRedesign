@@ -1,8 +1,11 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
+import { SectionEyebrow } from "@/components/ui/SectionEyebrow";
 import { Threads } from "@/components/ui/Threads";
+import { useHasHydrated } from "@/hooks/useHasHydrated";
+import { useIsSoftwareRenderer } from "@/hooks/useIsSoftwareRenderer";
 import { DASHBOARD_CONTAINER } from "@/constants/layout";
 
 // Jade -- the same `--accent-hover` token introduced for the CTA's hover
@@ -115,7 +118,8 @@ const item = {
  * accurate for the previous build, not the current one. The text stagger
  * below is unchanged; the background is the one exception to stillness now,
  * and it is skipped entirely under `prefers-reduced-motion` (see the
- * `prefersReducedMotion` check around the `<Threads>` render below).
+ * `showThreads` mount gate around the `<Threads>` render below -- still
+ * skipped for the same reason, just deferred past hydration now).
  *
  * SIDE BORDERS (2026-08-08, direct client decision on a two-option senior-
  * UI/UX call): `border-x border-border` added to this panel. Navbar lost
@@ -131,20 +135,93 @@ const item = {
  * decision.
  */
 export function Hero() {
-  const prefersReducedMotion = useReducedMotion();
+  /*
+   * Mount gate for the WebGL background, added 2026-08-10 alongside the
+   * sitewide hydration fix (components/layout/motion-provider.tsx).
+   *
+   * `<Threads>` is conditionally MOUNTED rather than animated, so
+   * `MotionConfig` can't help here -- and this was the worst instance of
+   * the bug: `useReducedMotion()` is `null` server-side, so the server
+   * always rendered the wrapper div, while a reduced-motion client rendered
+   * nothing. A missing/extra DOM node is a structural mismatch, which is
+   * why the homepage threw the hard "Hydration failed... this tree will be
+   * regenerated" error while /about only reported mismatched attributes.
+   *
+   * Deferring to a post-mount effect makes the server and the first client
+   * render agree unconditionally (neither includes it), after which the
+   * real preference decides. Nothing is lost by rendering it late: it is a
+   * `aria-hidden` WebGL canvas that paints nothing until its own JS runs,
+   * so it never had server-render value -- and keeping it out of first
+   * paint means the headline is no longer racing a shader for LCP.
+   *
+   * The gate itself lives in `hooks/useHasHydrated.ts` -- WhyLyftek's stat
+   * counter needs the same guard, which is exactly the "needed in more than
+   * one component" bar that folder's README sets for extraction.
+   *
+   * REVISED TWICE on 2026-08-10 -- read this before "fixing" the missing
+   * reduced-motion check, because its absence is deliberate:
+   *
+   * 1. The gate originally read `hasHydrated && !prefersReducedMotion`, so
+   *    reduced-motion visitors got a flat black panel with no waves at all.
+   * 2. Changed to always mount, with `animate={false}` under reduced motion
+   *    (a frozen frame of the same shader) -- on the reasoning that
+   *    `prefers-reduced-motion` asks to remove MOVEMENT, not artwork.
+   * 3. **Current: no reduced-motion check at all.** The waves animate for
+   *    every visitor.
+   *
+   * Step 3 is an EXPLICIT CLIENT DECISION (2026-08-10), taken with the
+   * trade-off stated plainly, and it knowingly departs from
+   * 13_MOTION_AND_ANIMATION.md ("support users who prefer reduced motion;
+   * respect prefers-reduced-motion") and 99_GLOBAL_RULES.md ("accessibility
+   * is mandatory; never sacrifice accessibility for aesthetics"). It is the
+   * one documented exception to those rules on this site -- do not treat it
+   * as licence to skip reduced-motion handling anywhere else, and do not
+   * silently revert it either; it was asked for directly.
+   *
+   * Worth knowing what actually prompted it: the client reported the waves
+   * "missing", which turned out to be their Windows Server dev VM shipping
+   * with "Adjust for best performance" -- that disables UI animations, and
+   * Chromium maps the flag straight to `prefers-reduced-motion: reduce`. So
+   * the site had been behaving correctly and real visitors always saw the
+   * animation; only that machine saw the frozen frame. The VM setting was
+   * corrected as well, so this code change is belt-and-braces rather than
+   * the actual fix for that symptom.
+   *
+   * `Threads` keeps its `animate` prop (see that file) even though nothing
+   * passes it now -- it is a real capability and the route back if this
+   * decision is ever reversed. Same "built, deliberately kept, currently
+   * unused" status LyftekMark carries in 09_DESIGN_SYSTEM.md.
+   */
+  const hasHydrated = useHasHydrated();
+
+  /*
+   * Performance guard, added 2026-08-10 after the client reported the whole
+   * site feeling laggy. Measured on their GPU-less VM, production build:
+   * /about (no WebGL) ran at 60.0fps while this page ran at 2.2fps -- the
+   * shader alone costing ~440ms per frame because there is no GPU and
+   * Chromium falls back to SwiftShader, a CPU rasterizer.
+   *
+   * This is a CAPABILITY check, not a preference one. It does not undo the
+   * client's decision to animate regardless of `prefers-reduced-motion`
+   * (see the docblock above): anyone with a working GPU still gets the
+   * continuous animation whatever their motion setting says. Only devices
+   * that physically cannot draw it at speed fall back to a single static
+   * frame of the same artwork -- which is what `Threads`' `animate` prop
+   * was kept for.
+   */
+  const isSoftwareRenderer = useIsSoftwareRenderer();
 
   return (
     <section
       className={`bg-panel border-border relative overflow-hidden border-x ${DASHBOARD_CONTAINER}`}
     >
       {/*
-        Threads (WebGL, continuous) replaces the old static grid + radial
-        gradient. Skipped entirely under prefers-reduced-motion rather than
-        rendered-but-paused -- the component has no built-in reduced-motion
-        handling (see Threads.tsx docblock), and a canvas that's present but
-        inert is still a WebGL context doing nothing useful, not a real
-        accessibility fallback. The fallback here is the plain --color-panel
-        background the section already sits on.
+        Threads (WebGL) replaces the old static grid + radial gradient, and
+        animates continuously for EVERY visitor -- no `prefers-reduced-motion`
+        branch, by explicit client decision. See the `hasHydrated` docblock
+        above for the full history and the accessibility trade-off that was
+        accepted; this is the site's one documented exception to
+        13_MOTION_AND_ANIMATION.md.
 
         NO explicit z-index here (not `-z-10`) -- deliberately DOM-order
         stacking instead, same mechanism this file's old HeroBackdrop
@@ -158,13 +235,14 @@ export function Hero() {
         before switching to this. Rendered FIRST in the JSX, before the text
         block, so normal auto-z-index stacking puts it behind the text.
       */}
-      {!prefersReducedMotion && (
+      {hasHydrated && (
         <div aria-hidden className="absolute inset-0">
           <Threads
             color={THREADS_COLOR}
             amplitude={1.1}
             distance={0}
-            enableMouseInteraction
+            enableMouseInteraction={!isSoftwareRenderer}
+            animate={!isSoftwareRenderer}
           />
         </div>
       )}
@@ -190,17 +268,21 @@ export function Hero() {
       */}
       <div className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-center px-6 py-16 md:px-8 lg:py-20">
 
+        {/*
+          `initial="hidden"` unconditionally -- reduced motion is handled
+          sitewide by MotionProvider now; branching it here per-section is
+          what caused a hydration mismatch (see motion-provider.tsx). The
+          Threads background above needs its own separate mount gate --
+          MotionConfig can't fix a conditionally-mounted node.
+        */}
         <motion.div
-          initial={prefersReducedMotion ? false : "hidden"}
+          initial="hidden"
           animate="visible"
           variants={container}
           className="flex flex-col items-start text-left"
         >
-          <motion.div variants={item} className="flex items-center gap-2">
-            <span aria-hidden className="bg-accent h-2 w-2 shrink-0" />
-            <p className="text-foreground-muted font-martian-mono text-xs font-semibold tracking-[0.28em] uppercase">
-              Enterprise Technology Partner
-            </p>
+          <motion.div variants={item}>
+            <SectionEyebrow>Enterprise Technology Partner</SectionEyebrow>
           </motion.div>
 
           {/*

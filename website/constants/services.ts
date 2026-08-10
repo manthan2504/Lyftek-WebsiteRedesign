@@ -14,6 +14,19 @@ import type { NavLink } from "@/types/navigation";
 export interface ServicePillar extends NavLink {
   icon: Icon;
   description: string;
+  /**
+   * URL segment, and the anchor id of this service's card in the homepage
+   * "What We Do" grid.
+   *
+   * Added 2026-08-10 when the per-service detail pages were built. Before
+   * that, `href` was `/#<slug>` and Services.tsx recovered the id by
+   * slicing two characters off the front of it -- which silently breaks the
+   * moment `href` stops starting with `/#`, as it now does. Carrying the
+   * slug explicitly removes that coupling: `href` describes where the card
+   * GOES, `slug` identifies WHAT it is, and neither has to be parsed out of
+   * the other.
+   */
+  slug: string;
 }
 
 /**
@@ -35,60 +48,85 @@ export interface ServicePillar extends NavLink {
  * docblock), but this remains the one place the service catalog is defined
  * so both consumers read from one source.
  *
- * HREFS (2026-08-08, direct client decision): were `/services#slug`,
- * pointing at a standalone services page that was never actually built --
- * "there is no need of a separate services page, we already have that
- * section at homepage." Changed to `/#slug`, an in-page anchor into this
- * same homepage section (Services.tsx) instead. Each `id={slug}` lives on
- * the matching card in Services.tsx's own render -- see that file for the
- * anchor targets these hrefs actually land on.
+ * HREFS -- two changes, in order:
+ *
+ * 2026-08-08 (client): were `/services#slug`, pointing at a standalone
+ * services page that was never built -- "there is no need of a separate
+ * services page, we already have that section at homepage." Changed to
+ * `/#slug`, an in-page anchor into this same homepage section.
+ *
+ * 2026-08-10 (client): now `/services/<slug>`, a real per-service detail
+ * page (`app/services/[slug]/page.tsx`, content in
+ * `constants/serviceDetails.ts`). This does NOT reinstate a `/services`
+ * index -- that decision stands, the homepage section is still the listing,
+ * and every detail page links back up to it. Only the individual pages are
+ * new.
+ *
+ * The per-card `id={slug}` anchors in Services.tsx are kept even though
+ * nothing in this codebase now links to them: they cost nothing, and any
+ * external or previously-shared `/#slug` link keeps working.
+ *
+ * COVERAGE: only three of the eight below have real source content
+ * (Customized Software Development, Cybersecurity & ISMS, Cloud Services &
+ * IT Support). The other five render an explicit "detail to follow" panel
+ * pending copy from the client -- see constants/serviceDetails.ts for the
+ * full mismatch note, including three live pages whose content has no home
+ * in this catalogue.
  */
 export const SERVICE_PILLARS: ServicePillar[] = [
   {
     label: "Customized Software Development",
-    href: "/#customized-software-development",
+    slug: "customized-software-development",
+    href: "/services/customized-software-development",
     icon: Code,
     description: "Tailor-made applications built to meet your unique business needs.",
   },
   {
     label: "RPA & Automation Solutions",
-    href: "/#rpa-automation-solutions",
+    slug: "rpa-automation-solutions",
+    href: "/services/rpa-automation-solutions",
     icon: Robot,
     description: "Automate repetitive processes and boost efficiency using RPA.",
   },
   {
     label: "IT Staffing & Resource Augmentation",
-    href: "/#it-staffing-resource-augmentation",
+    slug: "it-staffing-resource-augmentation",
+    href: "/services/it-staffing-resource-augmentation",
     icon: Users,
     description: "On-demand skilled IT professionals to scale your team quickly.",
   },
   {
     label: "Cybersecurity & ISMS (ISO 27001)",
-    href: "/#cybersecurity-isms",
+    slug: "cybersecurity-isms",
+    href: "/services/cybersecurity-isms",
     icon: ShieldCheck,
     description: "Protect systems and data with enterprise-grade cybersecurity.",
   },
   {
     label: "Cloud Services & IT Support",
-    href: "/#cloud-services-it-support",
+    slug: "cloud-services-it-support",
+    href: "/services/cloud-services-it-support",
     icon: Cloud,
     description: "Cloud migration, optimization, and 24x7 IT infrastructure support.",
   },
   {
     label: "GenAI & AI/ML Solutions",
-    href: "/#genai-ai-ml-solutions",
+    slug: "genai-ai-ml-solutions",
+    href: "/services/genai-ai-ml-solutions",
     icon: Sparkle,
     description: "AI-powered automation, predictions, and intelligent solutions.",
   },
   {
     label: "QA & Software Testing Services",
-    href: "/#qa-software-testing",
+    slug: "qa-software-testing",
+    href: "/services/qa-software-testing",
     icon: Bug,
     description: "Ensure quality, reliability, and performance with structured QA.",
   },
   {
     label: "Corporate Training & Enablement",
-    href: "/#corporate-training-enablement",
+    slug: "corporate-training-enablement",
+    href: "/services/corporate-training-enablement",
     icon: GraduationCap,
     description: "Upskill teams with hands-on training in modern technologies.",
   },

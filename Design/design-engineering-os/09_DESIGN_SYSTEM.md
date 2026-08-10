@@ -313,9 +313,46 @@ Not built yet: `Secondary` variant, and full HTML-attribute passthrough (current
 
 **Usage:** `<Threads color={[r,g,b]} amplitude={n} distance={n} enableMouseInteraction />` — color is normalized `[0-1]` floats, not hex (WebGL shader uniform, not CSS). Renders a full-bleed canvas via a `useRef` container; sizes itself to its parent via `ResizeObserver`.
 
-**Reduced motion:** has no built-in handling — any consumer must conditionally skip mounting it under `useReducedMotion()`, as `Hero.tsx` does, rather than relying on the component itself to degrade gracefully.
+**Reduced motion (REVISED 2026-08-10):** the component now has first-class handling via an **`animate` prop**. `animate={false}` draws exactly one frame and never starts the `requestAnimationFrame` loop — the same wave artwork, completely still, at zero ongoing GPU cost. The static frame renders at `iTime = 3.2`, deliberately not `0`, where the per-line phase offsets have not yet separated and the lines collapse into a flat band that reads as a rendering fault. `resize()` redraws that frame, since with no loop running nothing else would.
+
+This replaced the earlier guidance that consumers must "conditionally skip mounting it" — that over-applied the rule, since `prefers-reduced-motion` asks to remove movement, not artwork, and skipping the mount left those visitors with a flat black hero.
+
+**Hero does not currently use it.** Per an explicit client decision (2026-08-10) the Hero animates for every visitor with no reduced-motion branch at all — the site's one documented exception to 13_MOTION_AND_ANIMATION.md, recorded in full there and in Hero.tsx's own docblock. The `animate` prop is therefore **built and deliberately kept but currently unused**, the same status LyftekMark carries above: it is the route back if that decision is reversed. Do not delete it as dead code.
 
 **Stacking:** must be positioned via DOM order (render early, no explicit negative z-index) rather than `-z-index`, unless its container element establishes its own stacking context — see the Hero entry's bug writeup for why.
+
+---
+
+### SectionEyebrow ✅ Built (2026-08-10) — `website/components/ui/SectionEyebrow.tsx`
+
+**Purpose:** the small uppercase label that opens every section — a lime
+`h-2 w-2` square followed by a Martian Mono, wide-tracked, uppercase label
+("Who We Are", "What We Do", "Get In Touch", …).
+
+**Why it exists:** this exact markup was duplicated byte-for-byte in **11
+places** (nine section openers plus both Navbar mega-menu column headers).
+The styling had never actually drifted, but every future change to it was
+eleven identical edits, and the first one anybody missed would be the moment
+it silently fell out of sync. Extracting it is what 17_CODING_STANDARDS.md
+("avoid duplicated utility groups") and components/sections/README.md ("if a
+section pattern repeats across pages, promote it to components/ui") both
+ask for.
+
+**Usage:** `<SectionEyebrow>Who We Are</SectionEyebrow>`. Optional
+`className` merges onto the root for layout tweaks. **Do not hand-write the
+eyebrow markup again** — if the style needs to change, change it here.
+
+**Motion:** deliberately not a `motion` component and carries no variants.
+Three call sites (Hero, Services, AboutHero) animate their eyebrow as one
+child of a `staggerChildren` container; six do not. Those three wrap it in
+their own `<motion.div variants={item}>`, keeping stagger choreography owned
+by the section that defines it.
+
+**Not used by:** Footer's column headings. Those share the lime square but
+are `<h3>` navigation headings at `font-martian-mono text-sm font-semibold`
+in `text-foreground` — a different role, kept deliberately distinct because
+tracked-out uppercase would hurt footer legibility. See 07_TYPOGRAPHY.md's
+Locked Scale table.
 
 ---
 

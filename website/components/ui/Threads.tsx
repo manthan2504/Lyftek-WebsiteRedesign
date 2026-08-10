@@ -40,7 +40,31 @@ interface ThreadsProps {
   amplitude?: number;
   distance?: number;
   enableMouseInteraction?: boolean;
+  /**
+   * When false, the wave lines are drawn ONCE and the requestAnimationFrame
+   * loop is never started -- a still image of the same artwork, at zero
+   * ongoing CPU/GPU cost.
+   *
+   * Added 2026-08-10 for `prefers-reduced-motion`. Hero.tsx previously
+   * skipped mounting this component altogether for those visitors, which
+   * over-applied the rule: `prefers-reduced-motion` is about MOVEMENT, not
+   * imagery, and dropping the whole background left reduced-motion users
+   * looking at a flat black panel while everyone else got the brand's
+   * signature visual. Freezing the animation removes the motion and keeps
+   * the design. See Hero.tsx's own note for the fuller reasoning.
+   */
+  animate?: boolean;
 }
+
+/**
+ * `iTime` value (in the same seconds unit the render loop feeds the shader)
+ * used for the single static frame when `animate` is false. NOT zero -- at
+ * t=0 the per-line phase offsets have not yet separated, so the lines stack
+ * into a flat, nearly straight band that reads as a rendering fault rather
+ * than as the intended wave field. This value was chosen by rendering
+ * candidates and comparing them against a frame of the live animation.
+ */
+const STATIC_FRAME_TIME = 3.2;
 
 const vertexShader = `
 attribute vec2 position;
@@ -164,12 +188,19 @@ export function Threads({
   amplitude = 1,
   distance = 0,
   enableMouseInteraction = false,
+  animate = true,
   ...rest
 }: ThreadsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const animationFrameId = useRef<number>(0);
 
-  const propsRef = useRef({ color, amplitude, distance, enableMouseInteraction });
+  const propsRef = useRef({
+    color,
+    amplitude,
+    distance,
+    enableMouseInteraction,
+    animate,
+  });
   // Writing to a ref directly during render trips React 19's
   // react-hooks/refs lint rule (a real rule, not upstream's original
   // pattern -- the vendored source did this inline). useLayoutEffect keeps
@@ -178,7 +209,13 @@ export function Threads({
   // useEffect, which would still be correct but adds a strictly later timing
   // guarantee than this needs.
   useLayoutEffect(() => {
-    propsRef.current = { color, amplitude, distance, enableMouseInteraction };
+    propsRef.current = {
+      color,
+      amplitude,
+      distance,
+      enableMouseInteraction,
+      animate,
+    };
   });
 
   useEffect(() => {
@@ -214,6 +251,12 @@ export function Threads({
 
     const mesh = new Mesh(gl, { geometry, program });
 
+    // Assigned further down, only on the non-animating path. Declared here
+    // because `resize` has to be able to call it: with no render loop
+    // running, nothing else would ever redraw the canvas, so a resized
+    // window would keep showing a stale frame at the wrong scale.
+    let staticRender: (() => void) | null = null;
+
     const MAX_RENDER_DIM = 1920;
     function resize() {
       const { clientWidth, clientHeight } = container;
@@ -229,6 +272,7 @@ export function Threads({
       program.uniforms.iResolution.value.g = gl.canvas.height;
       program.uniforms.iResolution.value.b =
         gl.canvas.width / gl.canvas.height;
+      staticRender?.();
     }
 
     const resizeObserver = new ResizeObserver(resize);
@@ -260,18 +304,17 @@ export function Threads({
     );
     intersectionObserver.observe(container);
 
-    function update(t: number) {
-      animationFrameId.current = requestAnimationFrame(update);
-      if (!isVisible || document.hidden) return;
-
-      const { color, amplitude, distance, enableMouseInteraction } =
-        propsRef.current;
+    // Draw exactly one frame at shader-time `time` (seconds). Split out of
+    // `update` below so the static path can reuse it without scheduling a
+    // single requestAnimationFrame callback.
+    function renderFrame(time: number, trackMouse: boolean) {
+      const { color, amplitude, distance } = propsRef.current;
 
       program.uniforms.uColor.value.set(...color);
       program.uniforms.uAmplitude.value = amplitude;
       program.uniforms.uDistance.value = distance;
 
-      if (enableMouseInteraction) {
+      if (trackMouse) {
         const smoothing = 0.05;
         currentMouse[0] += smoothing * (targetMouse[0] - currentMouse[0]);
         currentMouse[1] += smoothing * (targetMouse[1] - currentMouse[1]);
@@ -281,11 +324,31 @@ export function Threads({
         program.uniforms.uMouse.value[0] = 0.5;
         program.uniforms.uMouse.value[1] = 0.5;
       }
-      program.uniforms.iTime.value = t * 0.001;
+      program.uniforms.iTime.value = time;
 
       renderer.render({ scene: mesh });
     }
-    animationFrameId.current = requestAnimationFrame(update);
+
+    function update(t: number) {
+      animationFrameId.current = requestAnimationFrame(update);
+      if (!isVisible || document.hidden) return;
+      renderFrame(t * 0.001, propsRef.current.enableMouseInteraction);
+    }
+
+    // Read through propsRef, not the closure variable, matching how this
+    // mount-once effect already reads every other prop -- keeps the `[]`
+    // dependency list honest.
+    if (propsRef.current.animate) {
+      animationFrameId.current = requestAnimationFrame(update);
+    } else {
+      // Reduced-motion path: one frame, no loop, no mouse tracking (mouse
+      // response is motion too). `staticRender` is also wired into `resize`
+      // above -- without that, resizing the window would leave the canvas
+      // showing a stale, wrongly-scaled frame, since nothing would ever
+      // redraw it.
+      staticRender = () => renderFrame(STATIC_FRAME_TIME, false);
+      staticRender();
+    }
 
     return () => {
       if (animationFrameId.current)
