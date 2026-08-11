@@ -266,7 +266,7 @@ export function Hero() {
         this still grows past one screen rather than clipping anything --
         `min-h`, not a fixed `h`.
       */}
-      <div className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-center px-6 py-16 md:px-8 lg:py-20">
+      <div className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-center px-6 py-12 md:px-8 md:py-16 lg:py-20">
 
         {/*
           `initial="hidden"` unconditionally -- reduced motion is handled
@@ -304,7 +304,34 @@ export function Hero() {
           */}
           <motion.h1
             variants={item}
-            className="font-rinter text-foreground mt-6 text-4xl leading-tight font-extrabold tracking-tight sm:text-6xl sm:leading-[1.05] lg:text-8xl lg:leading-[0.95] lg:tracking-tighter"
+            /*
+             * FLUID below 640px, so the three `block` spans stay on three
+             * lines at every phone width.
+             *
+             * The three-line stack is the composition -- "TECHNOLOGY /
+             * SHOULD REMOVE / complexity." -- and "SHOULD REMOVE" is the
+             * widest line. At the previous fixed `text-4xl` (36px) it
+             * measured wider than the available column on EVERY common
+             * phone size and wrapped to four lines: verified 238px avail at
+             * 320, 278px at 360, 293px at 375, all overflowing. So this was
+             * already broken before the responsive pass, not caused by it.
+             *
+             * A single smaller step didn't finish the job either -- 30px
+             * fixes 360 and 375 but still overflows the 238px column at 320.
+             * `clamp(1.5rem, 7.5vw, 2.25rem)` resolves to 24px at 320 and
+             * scales to the original 36px by 480, where it caps -- so 480px
+             * and up render exactly as before, and every width below gets
+             * the largest size that actually fits.
+             *
+             * The clamp is scoped `max-sm:` rather than left unprefixed.
+             * Unprefixed, the arbitrary `text-[...]` utility outranked
+             * `lg:text-8xl` in the cascade and silently held the desktop H1
+             * at 60px instead of 96px (caught by measuring 1440px, not by
+             * reading the class list). `max-sm:` confines it to below 640,
+             * where `sm:`/`lg:` don't apply at all, so the two can no longer
+             * collide.
+             */
+            className="font-rinter text-foreground mt-6 leading-tight font-extrabold tracking-tighter max-sm:text-[clamp(1.5rem,7.5vw,2.25rem)] xs:tracking-tight sm:text-6xl sm:leading-[1.05] lg:text-8xl lg:leading-[0.95] lg:tracking-tighter"
           >
             <span className="block uppercase">Technology</span>
             <span className="block uppercase">should remove</span>

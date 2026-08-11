@@ -179,7 +179,7 @@ export function Footer() {
               Empowering digital transformation through intelligent
               technology solutions.
             </p>
-            <div className="flex items-center gap-3">
+            <div className="-ml-[13px] flex items-center">
               {SOCIAL_LINKS.map(({ label, href, icon: SocialIcon }) => (
                 <a
                   key={label}
@@ -187,7 +187,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="focus-visible:ring-accent text-foreground-muted hover:text-foreground rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                  className="focus-visible:ring-accent text-foreground-muted hover:text-foreground inline-flex h-11 w-11 items-center justify-center rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 >
                   <SocialIcon size={18} />
                 </a>
@@ -225,7 +225,7 @@ export function Footer() {
                 Company
               </h3>
             </div>
-            <ul className="flex flex-col gap-2.5">
+            <ul className="-my-3 flex flex-col">
               {COMPANY_LINKS.map((link) => (
                 <li key={link.href}>
                   {/*
@@ -242,7 +242,7 @@ export function Footer() {
                   */}
                   <Link
                     href={link.href}
-                    className="focus-visible:ring-accent text-foreground-muted hover:text-foreground group inline-flex items-center gap-1 rounded-sm text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    className="focus-visible:ring-accent text-foreground-muted hover:text-foreground group -mx-2 flex w-fit items-center gap-1 rounded-sm px-2 py-3 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                   >
                     {link.label}
                     <ArrowUpRight
@@ -273,7 +273,7 @@ export function Footer() {
             */}
             <a
               href={`tel:${COMPANY_PHONE.replace(/\s+/g, "")}`}
-              className="focus-visible:ring-accent text-foreground-muted hover:text-foreground group inline-flex w-fit items-center gap-1 rounded-sm text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+              className="focus-visible:ring-accent text-foreground-muted hover:text-foreground group -mx-2 flex w-fit items-center gap-1 rounded-sm px-2 py-3 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
             >
               {COMPANY_PHONE}
               <ArrowUpRight
@@ -284,7 +284,7 @@ export function Footer() {
             </a>
             <a
               href={`mailto:${COMPANY_EMAIL}`}
-              className="focus-visible:ring-accent text-foreground-muted hover:text-foreground group inline-flex w-fit items-center gap-1 rounded-sm text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+              className="focus-visible:ring-accent text-foreground-muted hover:text-foreground group -mx-2 flex w-fit items-center gap-1 rounded-sm px-2 py-3 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
             >
               {COMPANY_EMAIL}
               <ArrowUpRight
@@ -434,12 +434,27 @@ export function Footer() {
             &copy; {new Date().getFullYear()} Lyftek Solutions Pvt. Ltd. All
             rights reserved.
           </p>
-          <ul className="flex flex-wrap gap-x-5 gap-y-2">
+          {/*
+            `gap-y-6` (24px) rather than `gap-y-2`: the links below carry
+            `-my-2 py-2`, so 8px of that gap is eaten back by the negative
+            margin, leaving 8px of real clearance between wrapped rows -- the
+            same visual spacing as before, with no overlapping hit areas.
+          */}
+          <ul className="flex flex-wrap gap-x-5 gap-y-6">
             {POLICY_LINKS.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="focus-visible:ring-accent text-foreground-muted hover:text-foreground rounded-sm text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                  /*
+                   * 32px hit area (12px text + 2x8px padding), not the 44px
+                   * used elsewhere in this footer: five policy links have to
+                   * wrap inside a 320px screen, and 44px rows would roughly
+                   * triple the height of this block for the least-used links
+                   * on the page. 32px clears the WCAG 2.2 AA floor (2.5.8,
+                   * 24x24) with margin; the negative margins keep the
+                   * rendered spacing identical to before.
+                   */
+                  className="focus-visible:ring-accent text-foreground-muted hover:text-foreground -mx-2 -my-2 inline-block rounded-sm px-2 py-2 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 >
                   {link.label}
                 </Link>

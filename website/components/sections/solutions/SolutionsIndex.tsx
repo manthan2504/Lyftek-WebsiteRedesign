@@ -75,14 +75,14 @@ export function SolutionsIndex() {
 
             <motion.h1
               variants={item}
-              className="font-rinter text-foreground mt-6 text-5xl tracking-tight sm:text-6xl lg:text-7xl"
+              className="font-rinter text-foreground mt-6 text-4xl tracking-tight xs:text-5xl sm:text-6xl lg:text-7xl"
             >
               Solutions.
             </motion.h1>
 
             <motion.p
               variants={item}
-              className="text-foreground-secondary mt-8 max-w-3xl text-lg leading-relaxed"
+              className="text-foreground-secondary mt-8 max-w-3xl text-base leading-relaxed xs:text-lg"
             >
               Finance and healthcare operations carry the same problem in
               different forms: work that people repeat because the systems
@@ -107,12 +107,12 @@ export function SolutionsIndex() {
                 whileInView="visible"
                 viewport={{ once: true, margin: "-80px" }}
                 variants={fadeUp}
-                className={`flex flex-col px-6 py-24 md:px-8 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
+                className={`flex flex-col px-6 py-16 xs:py-20 md:px-8 md:py-24 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
               >
                 <SectionEyebrow>
                   {SOLUTION_CATEGORY_LABELS[category]}
                 </SectionEyebrow>
-                <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-3xl tracking-tight sm:text-4xl">
+                <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-2xl tracking-tight xs:text-3xl sm:text-4xl">
                   {category === "enterprise-finance"
                     ? "The finance processes worth automating first."
                     : "Revenue operations for healthcare providers."}
@@ -126,10 +126,10 @@ export function SolutionsIndex() {
                       id={solution.slug}
                       className={cn(
                         "group border-border focus-visible:ring-accent hover:bg-surface/40 flex scroll-mt-16 flex-col gap-3 border-b px-2 py-8 transition-colors focus-visible:ring-2 focus-visible:outline-none",
-                        "md:flex-row md:items-baseline md:gap-10",
+                        "lg:flex-row lg:items-baseline lg:gap-10",
                       )}
                     >
-                      <h3 className="font-rinter text-foreground group-hover:text-accent shrink-0 text-xl tracking-tight transition-colors md:w-2/5 lg:text-2xl">
+                      <h3 className="font-rinter text-foreground group-hover:text-accent shrink-0 text-xl tracking-tight transition-colors lg:w-2/5 lg:text-2xl">
                         {solution.title}
                       </h3>
                       <p className="text-foreground-muted flex-1 text-sm leading-relaxed">

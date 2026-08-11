@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { DASHBOARD_CONTAINER } from "@/constants/layout";
 import { OFFICE_MAP_EMBED_URL } from "@/constants/contact";
+import { cn } from "@/utils/cn";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -73,27 +75,63 @@ const fadeUp = {
  * tile requests shouldn't compete with the form above it on first paint.
  */
 export function OfficeMap() {
+  const [mapActive, setMapActive] = useState(false);
+
   return (
     <section className="bg-background" aria-labelledby="office-map-heading">
       <div className={`border-border border-t border-x ${DASHBOARD_CONTAINER}`}>
         <h2 id="office-map-heading" className="sr-only">
           Our office location
         </h2>
+        {/*
+          `h-[320px]` below 480px: 420px of map on a 568px-tall iPhone SE
+          viewport is 74% of the screen. The fixed-height ramp is kept rather
+          than an `aspect-*` ratio -- this element spans the full container,
+          so `aspect-[16/9]` would produce an 810px-tall map at 1440.
+        */}
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
           variants={fadeUp}
-          className="h-[420px] w-full md:h-[480px] lg:h-[560px]"
+          className="xs:h-[420px] relative h-[320px] w-full md:h-[480px] lg:h-[560px]"
         >
           <iframe
             src={OFFICE_MAP_EMBED_URL}
             title="Lyftek office location on Google Maps"
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
-            className="h-full w-full grayscale invert-[0.92] contrast-[0.9]"
+            className={cn(
+              "h-full w-full grayscale invert-[0.92] contrast-[0.9]",
+              !mapActive && "pointer-events-none",
+            )}
             style={{ border: 0 }}
           />
+          {/*
+            TOUCH SCROLL TRAP. Google's cross-origin embed swallows touch
+            pan, so a finger landing anywhere on a 320-560px-tall map cannot
+            scroll the page past it -- on a phone the map is most of the
+            screen, so this strands the user. `touch-action` can't be applied
+            across an origin boundary, so the only real fix is to leave the
+            iframe inert until an explicit tap activates it.
+
+            Rendered unconditionally, NOT `md:hidden`: a display-hidden
+            overlay would leave the iframe permanently `pointer-events-none`
+            on desktop, i.e. a dead map. No content is hidden either way --
+            the map still renders, and the address plus a directions link
+            already sit above it in ContactSection.
+          */}
+          {!mapActive && (
+            <button
+              type="button"
+              onClick={() => setMapActive(true)}
+              className="focus-visible:ring-accent absolute inset-0 flex items-end justify-center pb-8 focus-visible:ring-2 focus-visible:outline-none"
+            >
+              <span className="bg-panel/90 border-border text-foreground border px-4 py-2 text-sm">
+                Tap to interact with the map
+              </span>
+            </button>
+          )}
         </motion.div>
       </div>
     </section>

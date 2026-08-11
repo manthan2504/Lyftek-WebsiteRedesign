@@ -145,7 +145,7 @@ export function ContactSection() {
     <section
       className={`bg-panel border-border relative border-x ${DASHBOARD_CONTAINER}`}
     >
-      <div className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-center px-6 py-20 md:px-8 lg:py-24">
+      <div className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-center px-6 py-16 xs:py-20 md:px-8 lg:py-24">
         <motion.div
           initial="hidden"
           animate="visible"
@@ -168,7 +168,7 @@ export function ContactSection() {
           >
             <SectionEyebrow>Get In Touch</SectionEyebrow>
 
-            <h1 className="font-rinter text-foreground mt-6 text-5xl tracking-tight sm:text-6xl lg:text-7xl">
+            <h1 className="font-rinter text-foreground mt-6 text-4xl tracking-tight xs:text-5xl sm:text-6xl lg:text-7xl">
               Contact.
             </h1>
 

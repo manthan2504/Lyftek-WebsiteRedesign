@@ -45,8 +45,8 @@ export function SectionEyebrow({
   className?: string;
 }) {
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <span aria-hidden className="bg-accent h-2 w-2 shrink-0" />
+    <div className={cn("flex items-start gap-2 sm:items-center", className)}>
+      <span aria-hidden className="bg-accent mt-1 h-2 w-2 shrink-0 sm:mt-0" />
       <p className="text-foreground-muted font-martian-mono text-xs font-semibold tracking-[0.28em] uppercase">
         {children}
       </p>

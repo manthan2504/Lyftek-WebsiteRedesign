@@ -90,7 +90,7 @@ export function ContactCTA() {
     // lines are the same element at the same width.
     <section className="bg-background">
       <div
-        className={`border-border border-t border-x py-24 lg:py-32 ${DASHBOARD_CONTAINER}`}
+        className={`border-border border-t border-x py-16 md:py-24 lg:py-32 ${DASHBOARD_CONTAINER}`}
       >
         {/*
           `initial="hidden"` unconditionally -- reduced motion is handled
@@ -114,7 +114,7 @@ export function ContactCTA() {
               eyebrow->heading step is tighter than heading->body, matching
               how every other section paces this same three-line rhythm.
             */}
-            <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl">
+            <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl xl:text-5xl">
               Let&apos;s build something together.
             </h2>
             <p className="text-foreground-secondary mt-6 max-w-md text-lg leading-relaxed">

@@ -63,7 +63,7 @@ export function ServiceHero({ service }: { service: ServiceDetail }) {
           <motion.div variants={item}>
             <Link
               href="/#services"
-              className="text-foreground-muted hover:text-foreground focus-visible:ring-accent group inline-flex items-center gap-2 rounded-sm text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+              className="text-foreground-muted hover:text-foreground focus-visible:ring-accent group -mx-2 -my-3 inline-flex items-center gap-2 rounded-sm px-2 py-3 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
             >
               <ArrowLeft
                 aria-hidden
@@ -81,14 +81,14 @@ export function ServiceHero({ service }: { service: ServiceDetail }) {
 
             <motion.h1
               variants={item}
-              className="font-rinter text-foreground mt-4 max-w-4xl text-4xl tracking-tight sm:text-5xl lg:text-6xl"
+              className="font-rinter text-foreground mt-4 max-w-4xl text-3xl tracking-tight xs:text-4xl sm:text-5xl lg:text-6xl"
             >
               {service.title}
             </motion.h1>
 
             <motion.p
               variants={item}
-              className="text-foreground-secondary mt-8 max-w-3xl text-lg leading-relaxed"
+              className="text-foreground-secondary mt-8 max-w-3xl text-base leading-relaxed xs:text-lg"
             >
               {service.summary}
             </motion.p>
@@ -126,10 +126,10 @@ function PendingContent({ service }: { service: ServiceDetail }) {
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
           variants={fadeUp}
-          className={`flex flex-col px-6 py-24 md:px-8 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
+          className={`flex flex-col px-6 py-16 xs:py-20 md:px-8 md:py-24 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
         >
           <SectionEyebrow>Detail To Follow</SectionEyebrow>
-          <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-3xl tracking-tight sm:text-4xl">
+          <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-2xl tracking-tight xs:text-3xl sm:text-4xl">
             Full detail for this service is being prepared.
           </h2>
           {/*
@@ -194,10 +194,10 @@ function Band({
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
           variants={fadeUp}
-          className={`flex flex-col px-6 py-24 md:px-8 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
+          className={`flex flex-col px-6 py-16 xs:py-20 md:px-8 md:py-24 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
         >
           <SectionEyebrow>{eyebrow}</SectionEyebrow>
-          <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-3xl tracking-tight sm:text-4xl">
+          <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-2xl tracking-tight xs:text-3xl sm:text-4xl">
             {heading}
           </h2>
           {children}

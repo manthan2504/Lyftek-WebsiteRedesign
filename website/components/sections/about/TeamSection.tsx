@@ -107,17 +107,17 @@ export function TeamSection() {
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
           variants={fadeUp}
-          className={`px-6 py-24 md:px-8 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
+          className={`px-6 py-16 md:px-8 md:py-24 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
         >
           <div className="grid grid-cols-1 gap-16 lg:grid-cols-2 lg:items-center lg:gap-12">
             <div>
               <SectionEyebrow>Leadership</SectionEyebrow>
 
-              <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl">
+              <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl xl:text-5xl">
                 Our Team
               </h2>
 
-              <div className="mt-14 grid grid-cols-1 gap-12 sm:grid-cols-2 lg:mt-16">
+              <div className="mt-14 grid grid-cols-1 gap-8 xs:grid-cols-2 sm:gap-12 lg:mt-16">
                 {TEAM_MEMBERS.map((member) => (
                   <div key={member.name} className="flex flex-col gap-4">
                     <div className="bg-surface border-border flex aspect-[4/5] w-full items-center justify-center border">
@@ -148,7 +148,7 @@ export function TeamSection() {
               <p className="text-foreground-muted font-mono text-xs font-semibold tracking-[0.15em] uppercase">
                 A Message From Our Founder
               </p>
-              <blockquote className="border-accent flex flex-col gap-4 border-l-2 pl-6">
+              <blockquote className="border-accent flex flex-col gap-4 border-l-2 pl-4 sm:pl-6">
                 <p className="text-foreground text-xl leading-relaxed lg:text-2xl">
                   &ldquo;{FOUNDER_QUOTE.quote}&rdquo;
                 </p>

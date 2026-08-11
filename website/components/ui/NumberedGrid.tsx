@@ -89,7 +89,7 @@ export function NumberedGrid({
         <div
           key={entry.title}
           className={cn(
-            "border-border flex flex-col gap-3 p-8 lg:p-10",
+            "border-border flex flex-col gap-3 p-6 xs:p-8 lg:p-10",
             cellBorders(index, items.length, lgCols),
           )}
         >

@@ -66,7 +66,7 @@ export function SolutionHero({
           <motion.div variants={item}>
             <Link
               href="/solutions"
-              className="text-foreground-muted hover:text-foreground focus-visible:ring-accent group inline-flex items-center gap-2 rounded-sm text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+              className="text-foreground-muted hover:text-foreground focus-visible:ring-accent group -mx-2 -my-3 inline-flex items-center gap-2 rounded-sm px-2 py-3 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
             >
               <ArrowLeft
                 aria-hidden
@@ -83,14 +83,14 @@ export function SolutionHero({
 
           <motion.h1
             variants={item}
-            className="font-rinter text-foreground mt-4 max-w-4xl text-4xl tracking-tight sm:text-5xl lg:text-6xl"
+            className="font-rinter text-foreground mt-4 max-w-4xl text-3xl tracking-tight xs:text-4xl sm:text-5xl lg:text-6xl"
           >
             {solution.title}
           </motion.h1>
 
           <motion.p
             variants={item}
-            className="text-foreground-secondary mt-8 max-w-3xl text-lg leading-relaxed"
+            className="text-foreground-secondary mt-8 max-w-3xl text-base leading-relaxed xs:text-lg"
           >
             {solution.summary}
           </motion.p>
@@ -98,20 +98,20 @@ export function SolutionHero({
           {solution.stats && (
             <motion.dl
               variants={item}
-              className="border-border mt-14 grid grid-cols-1 border-t sm:grid-cols-3"
+              className="border-border mt-10 grid grid-cols-1 border-t xs:mt-14 md:grid-cols-3"
             >
               {solution.stats.map((stat, index) => (
                 <div
                   key={stat.value}
                   className={`border-border flex flex-col gap-2 py-8 sm:px-8 sm:first:pl-0 ${
                     index < solution.stats!.length - 1
-                      ? "border-b sm:border-r sm:border-b-0"
+                      ? "border-b md:border-r md:border-b-0"
                       : ""
                   }`}
                 >
                   <dt className="sr-only">{stat.label}</dt>
                   <dd className="flex flex-col gap-2">
-                    <span className="font-rinter text-accent text-4xl tracking-tight lg:text-5xl">
+                    <span className="font-rinter text-accent text-3xl tracking-tight xs:text-4xl lg:text-5xl">
                       {stat.value}
                     </span>
                     <span className="text-foreground-muted max-w-xs text-sm leading-relaxed">

@@ -36,7 +36,7 @@ export function RowArrow() {
   return (
     <span
       aria-hidden
-      className="border-border group-hover:border-accent flex h-10 w-10 shrink-0 items-center justify-center self-center border transition-colors duration-200 ease-out"
+      className="border-border group-hover:border-accent flex h-10 w-10 shrink-0 items-center justify-center self-start border lg:self-center transition-colors duration-200 ease-out"
     >
       <ArrowRight
         size={16}

@@ -83,6 +83,57 @@
 }
 
 /*
+ * BREAKPOINTS -- aligned to the client's named device bands (2026-08-11)
+ * rather than to Tailwind's stock scale.
+ *
+ *   320-479   mobile portrait    -> base (no variant)
+ *   480-767   mobile landscape   -> xs:   (sm: at 640 usefully subdivides it;
+ *                                          a 480px phone and a 720px small
+ *                                          tablet should not share a headline
+ *                                          size)
+ *   768-1024  tablet             -> md:
+ *   1025-1280 laptop             -> lg:
+ *   1281+     desktop            -> xl:
+ *
+ * `lg` and `xl` are shifted up by exactly 1px from Tailwind's 1024/1280 so the
+ * band edges the client gave are inclusive. Without that shift `lg:` fires AT
+ * 1024, i.e. laptop layout lands on a tablet -- the precise off-by-one these
+ * bands were written to prevent. The only viewport widths whose rendering
+ * changes are exactly 1024px and exactly 1280px; 1024 is a real device size
+ * (iPad Pro 12.9 landscape), which is why it is worth correcting.
+ *
+ * This must be a plain `@theme`, NOT `@theme inline` -- breakpoints are
+ * consumed by Tailwind at build time to generate variants, and `inline`
+ * defeats that.
+ */
+@theme {
+  /*
+   * The WHOLE scale is redeclared, in ascending order, after an explicit
+   * `initial` reset -- deliberately, not for tidiness.
+   *
+   * Overriding only the changed keys (`--breakpoint-xs/lg/xl`) appends them
+   * AFTER Tailwind's defaults instead of replacing them in place, and
+   * Tailwind emits responsive utilities in declaration order. That made
+   * `sm:` rules come out after `lg:` rules, so at any width where both match
+   * the `sm:` value won. Concretely: the homepage hero H1 has
+   * `sm:text-6xl lg:text-8xl`, and at 1440px it silently rendered 60px
+   * instead of 96px. `hidden lg:block` still worked, which is why this
+   * doesn't show up in a spot check -- it only bites where a `sm:` and an
+   * `lg:` utility set the SAME property.
+   *
+   * Resetting first and redeclaring all six keeps the emission order
+   * ascending, so the largest matching breakpoint wins as it should.
+   */
+  --breakpoint-*: initial;
+  --breakpoint-xs: 480px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1025px;
+  --breakpoint-xl: 1281px;
+  --breakpoint-2xl: 1536px;
+}
+
+/*
  * DARK THEME (default)
  * Values taken directly from the candidate palette in 08_COLOR_SYSTEM.md.
  * That doc explicitly frames these as an initial direction to "evaluate and

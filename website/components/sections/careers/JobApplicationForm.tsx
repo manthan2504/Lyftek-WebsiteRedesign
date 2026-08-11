@@ -111,7 +111,7 @@ export function JobApplicationForm({ jobTitle }: { jobTitle: string }) {
         error={errors.message}
       />
       <div>
-        <Button type="submit" variant="primary">
+        <Button type="submit" variant="primary" className="w-full sm:w-auto">
           Submit Application
         </Button>
       </div>

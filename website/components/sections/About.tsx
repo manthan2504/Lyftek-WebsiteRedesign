@@ -145,7 +145,7 @@ export function About() {
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
           variants={fadeUp}
-          className={`grid grid-cols-1 gap-16 px-6 py-24 md:px-8 lg:grid-cols-2 lg:items-stretch lg:gap-12 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
+          className={`grid grid-cols-1 gap-16 px-6 py-16 md:px-8 md:py-24 lg:grid-cols-2 lg:items-stretch lg:gap-12 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
         >
         {/*
           2026-08-10 consistency pass: was `flex flex-col gap-6`, which put
@@ -171,7 +171,7 @@ export function About() {
             here would just trigger the browser's synthetic-bold fallback
             instead of an actually-designed bold cut.
           */}
-          <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl">
+          <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl xl:text-5xl">
             An enterprise technology partner, not another vendor to manage.
           </h2>
           <p className="text-foreground-secondary mt-6 text-lg leading-relaxed">
@@ -403,7 +403,39 @@ export function About() {
               */}
               <div className="relative mt-32 mr-6 h-full w-full max-w-[460px] shrink-0">
                 <CardSwap
-                  width={560}
+                  /*
+                   * `min(560px, 100%)`, not a fixed 560. Revision #9 above
+                   * settled that cropping the card's right/bottom is FINE --
+                   * but explicitly conditional on "the CORE content (avatar,
+                   * role, subject, message) stays fully visible". Below `lg`
+                   * that condition was being broken: `CardSwap`'s anchor
+                   * classes carried `max-[768px]:scale-[0.75]` and
+                   * `max-[480px]:scale-[0.55]`, which shrink the whole card
+                   * including its type -- the 12px body rendered at ~6.6px
+                   * effective at 320px. Legally "visible", not readable.
+                   *
+                   * Sizing to the container instead of scaling keeps the type
+                   * at its real size at every width.
+                   *
+                   * `122%` is deliberate, not `100%`: the card is SUPPOSED to
+                   * overrun its `max-w-[460px]` wrapper -- 560 into 460 is
+                   * exactly the "right/bottom decorative crop" revision #9
+                   * signed off, so sizing flush to the wrapper would delete
+                   * the effect. 122% reproduces that same ~22% overrun at
+                   * every width, and since the wrapper is 460 at `lg:`+,
+                   * 460 * 1.22 = 561 clamps to the 560 cap -- desktop renders
+                   * byte-identically to the old fixed 560.
+                   *
+                   * Percentages resolve against this wrapper, not the
+                   * viewport, so it stays correct in the two-column `lg`
+                   * layout where the column is narrower than the page.
+                   *
+                   * Skew compensation still holds: the docblock's
+                   * (width/2)*tan(4deg) is 19.6px at 560 against `mt-6`
+                   * (24px); a NARROWER card only shrinks that offset, so the
+                   * buffer grows rather than shrinks.
+                   */
+                  width="min(560px, 122%)"
                   height={440}
                   cardDistance={50}
                   verticalDistance={56}

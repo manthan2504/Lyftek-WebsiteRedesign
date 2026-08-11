@@ -46,10 +46,10 @@ function ListBand({
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
           variants={fadeUp}
-          className={`flex flex-col px-6 py-24 md:px-8 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
+          className={`flex flex-col px-6 py-16 xs:py-20 md:px-8 md:py-24 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
         >
           <SectionEyebrow>{eyebrow}</SectionEyebrow>
-          <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-3xl tracking-tight sm:text-4xl">
+          <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-2xl tracking-tight xs:text-3xl sm:text-4xl">
             {heading}
           </h2>
           <ul className="text-foreground-secondary mt-10 flex max-w-3xl flex-col gap-4 text-lg leading-relaxed">
@@ -105,10 +105,10 @@ export function CareerBody({ opening }: { opening: CareerOpening }) {
             whileInView="visible"
             viewport={{ once: true, margin: "-80px" }}
             variants={fadeUp}
-            className={`flex flex-col px-6 py-24 md:px-8 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
+            className={`flex flex-col px-6 py-16 xs:py-20 md:px-8 md:py-24 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
           >
             <SectionEyebrow>Apply</SectionEyebrow>
-            <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-3xl tracking-tight sm:text-4xl">
+            <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-2xl tracking-tight xs:text-3xl sm:text-4xl">
               Apply for {opening.title}.
             </h2>
             <div className="mt-12 max-w-2xl">

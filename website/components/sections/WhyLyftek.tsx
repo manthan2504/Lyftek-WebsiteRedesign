@@ -274,7 +274,7 @@ export function WhyLyftek() {
           // margins looked identical to the other sections in the source
           // while rendering differently. Same fix applied to
           // WhyDifferent.tsx, the only other section with this parent gap.
-          className={`flex flex-col px-6 py-16 md:px-8 lg:py-24 ${PANEL_CONTAINER_NESTED}`}
+          className={`flex flex-col px-6 py-12 md:px-8 md:py-24 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
         >
           <SectionEyebrow>Why Lyftek</SectionEyebrow>
 
@@ -288,7 +288,7 @@ export function WhyLyftek() {
             36px on the same page -- headings visibly stepping up and down
             while scrolling at tablet widths.
           */}
-          <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl">
+          <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl xl:text-5xl">
             Built on expertise, proven with clients.
           </h2>
 
@@ -328,8 +328,8 @@ export function WhyLyftek() {
             spacing the client asked for, nothing dividing one stat from
             the next.
           */}
-          <div className="border-divider mt-10 w-full border p-8 lg:mt-14 lg:p-10">
-            <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-4">
+          <div className="border-divider mt-10 w-full border p-6 sm:p-8 lg:mt-14 lg:p-10">
+            <div className="grid grid-cols-1 gap-x-8 gap-y-10 xs:grid-cols-2 sm:grid-cols-4">
               {STATS.map((stat) => (
                 <div key={stat.label} className="flex flex-col gap-1">
                   {/*

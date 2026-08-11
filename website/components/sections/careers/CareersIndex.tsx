@@ -68,14 +68,14 @@ export function CareersIndex() {
 
             <motion.h1
               variants={item}
-              className="font-rinter text-foreground mt-6 text-5xl tracking-tight sm:text-6xl lg:text-7xl"
+              className="font-rinter text-foreground mt-6 text-4xl tracking-tight xs:text-5xl sm:text-6xl lg:text-7xl"
             >
               Careers.
             </motion.h1>
 
             <motion.p
               variants={item}
-              className="text-foreground-secondary mt-8 max-w-3xl text-lg leading-relaxed"
+              className="text-foreground-secondary mt-8 max-w-3xl text-base leading-relaxed xs:text-lg"
             >
               Empowering digital transformation since 2011. Join a team of
               engineers, consultants, and specialists building enterprise
@@ -95,7 +95,7 @@ export function CareersIndex() {
             whileInView="visible"
             viewport={{ once: true, margin: "-80px" }}
             variants={fadeUp}
-            className={`flex flex-col px-6 py-24 md:px-8 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
+            className={`flex flex-col px-6 py-16 xs:py-20 md:px-8 md:py-24 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
           >
             <SectionEyebrow>Current Openings</SectionEyebrow>
 
@@ -106,10 +106,10 @@ export function CareersIndex() {
                   href={`/careers/${opening.slug}`}
                   className={cn(
                     "group border-border focus-visible:ring-accent hover:bg-surface/40 flex flex-col gap-3 border-b px-2 py-8 transition-colors focus-visible:ring-2 focus-visible:outline-none",
-                    "md:flex-row md:items-baseline md:gap-10",
+                    "lg:flex-row lg:items-baseline lg:gap-10",
                   )}
                 >
-                  <div className="shrink-0 md:w-2/5">
+                  <div className="shrink-0 lg:w-2/5">
                     <h3 className="font-rinter text-foreground group-hover:text-accent text-xl tracking-tight transition-colors lg:text-2xl">
                       {opening.title}
                     </h3>

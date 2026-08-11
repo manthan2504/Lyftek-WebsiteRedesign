@@ -271,7 +271,7 @@ export function Services() {
     // app/page.tsx's own `scroll-mt-16` on `<main>`.
     <section id="services" className="scroll-mt-16 bg-background">
       <div
-        className={`border-border border-t border-x py-24 lg:py-32 ${DASHBOARD_CONTAINER}`}
+        className={`border-border border-t border-x py-16 md:py-24 lg:py-32 ${DASHBOARD_CONTAINER}`}
       >
       <div className={`px-6 md:px-8 ${PANEL_CONTAINER_NESTED}`}>
         {/*
@@ -330,7 +330,7 @@ export function Services() {
             //
             // `lg:max-w-none` stays: the two forced lines fit more easily
             // at 36px than they did at 48px, so nothing re-wraps.
-            className="font-rinter text-foreground mt-4 max-w-3xl text-3xl tracking-tight sm:text-4xl lg:max-w-none"
+            className="font-rinter text-foreground mt-4 max-w-3xl text-3xl tracking-tight sm:text-4xl lg:max-w-none xl:text-5xl"
           >
             {/*
               2026-08-08, direct client request: forced two-line break
@@ -374,7 +374,7 @@ export function Services() {
                   id={slug}
                   href={href}
                   className={cn(
-                    "group border-border focus-visible:ring-accent bg-background relative flex flex-col gap-4 overflow-hidden p-8 focus-visible:ring-2 focus-visible:outline-none lg:p-10",
+                    "group border-border focus-visible:ring-accent bg-background relative flex flex-col gap-4 overflow-hidden p-6 sm:p-8 focus-visible:ring-2 focus-visible:outline-none lg:p-10",
                     pillarBorderClasses(index, SERVICE_PILLARS.length),
                   )}
                 >

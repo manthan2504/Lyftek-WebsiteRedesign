@@ -167,18 +167,18 @@ export function Select({
             // elements don't reliably get the hand cursor from browser
             // defaults alone (Firefox in particular defaults buttons to
             // the plain arrow), so this shouldn't be left implicit.
-            "bg-surface border-border text-foreground flex w-full cursor-pointer items-center justify-between gap-2 rounded-sm border px-4 py-2.5 text-left text-sm transition-colors outline-none",
+            "bg-surface border-border text-foreground flex w-full cursor-pointer items-start justify-between gap-2 rounded-sm border px-4 py-2.5 text-left text-base transition-colors outline-none",
             "focus-visible:border-accent focus-visible:ring-accent focus-visible:ring-2 focus-visible:ring-offset-0",
             !selected && "text-foreground-muted",
             error && "border-error",
           )}
         >
-          <span className="truncate">{selected ? selected.label : placeholder}</span>
+          <span>{selected ? selected.label : placeholder}</span>
           <CaretDown
             aria-hidden
             size={16}
             className={cn(
-              "text-foreground-muted shrink-0 transition-transform duration-200",
+              "text-foreground-muted mt-1 shrink-0 transition-transform duration-200",
               open && "rotate-180",
             )}
           />
@@ -195,7 +195,7 @@ export function Select({
               animate={{ opacity: 1, y: 0 }}
               exit={prefersReducedMotion ? undefined : { opacity: 0, y: -4 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
-              className="bg-surface border-border absolute z-20 mt-2 max-h-64 w-full overflow-auto rounded-sm border py-1"
+              className="bg-surface border-border absolute z-20 mt-2 max-h-[min(16rem,50vh)] w-full overflow-auto overscroll-contain rounded-sm border py-1"
             >
               {options.map((option, index) => (
                 <li
@@ -206,17 +206,17 @@ export function Select({
                   onClick={() => selectOption(index)}
                   onMouseEnter={() => setActiveIndex(index)}
                   className={cn(
-                    "flex cursor-pointer items-center justify-between gap-2 px-4 py-2 text-sm transition-colors",
+                    "flex cursor-pointer items-start justify-between gap-2 px-4 py-3 text-base transition-colors",
                     index === activeIndex
                       ? "bg-surface-hover text-foreground"
                       : "text-foreground-secondary",
                   )}
                 >
-                  <span className={cn("truncate", option.value === value && "text-accent")}>
+                  <span className={cn(option.value === value && "text-accent")}>
                     {option.label}
                   </span>
                   {option.value === value && (
-                    <Check aria-hidden size={14} className="text-accent shrink-0" />
+                    <Check aria-hidden size={14} className="text-accent mt-1 shrink-0" />
                   )}
                 </li>
               ))}
@@ -226,7 +226,7 @@ export function Select({
       </div>
       <input type="hidden" name={name} value={value} required={required} />
       {error && (
-        <p id={`${buttonId}-error`} className="text-error text-xs">
+        <p id={`${buttonId}-error`} className="text-error text-sm">
           {error}
         </p>
       )}

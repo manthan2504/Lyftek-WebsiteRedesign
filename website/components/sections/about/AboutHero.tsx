@@ -113,7 +113,13 @@ export function AboutHero() {
     <section
       className={`bg-panel border-border relative border-x ${DASHBOARD_CONTAINER}`}
     >
-      <div className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-center px-6 py-16 md:px-8 lg:py-20">
+      {/*
+        `py-12` at mobile, not `py-16`: once the illustration stacks under the
+        copy this hero is ~1030px tall at 320px, and 128px of vertical padding
+        on top of that is dead scroll. `min-h` is a floor, so it still governs
+        short viewports.
+      */}
+      <div className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-center px-6 py-12 md:px-8 md:py-16 lg:py-20">
         {/*
           `initial="hidden"` unconditionally -- NOT branched on
           `useReducedMotion()`, which is what caused a hydration mismatch
@@ -159,9 +165,24 @@ export function AboutHero() {
             the column held only decoration, but the statement line below is
             real copy and has to stay in the accessibility tree.
           */}
+          {/*
+            Below `lg` this stacks under the copy and the ARTWORK bleeds to
+            the panel's border rails: `-mx-6 md:-mx-8` exactly cancels the
+            ancestor's `px-6 md:px-8`, buying 48px of width at 320px (240 ->
+            288, +20%) -- the cheapest width win available to a drawing this
+            detailed, and touching the rails reads as deliberate full-bleed
+            art. No page overflow results: the item's edges land on the
+            container's border box, and grid-cols-1's `1fr` track is not
+            content-sized.
+
+            `justify-self-center` is deferred to `lg:` -- below that the grid
+            item must stretch, or the negative margins fight a shrink-to-fit
+            box. No `max-w` below `lg` either: at 768 the drawing should have
+            all ~656px, not 512.
+          */}
           <motion.div
             variants={item}
-            className="hidden justify-self-center lg:flex lg:w-full lg:max-w-lg lg:flex-col xl:max-w-xl"
+            className="-mx-6 flex flex-col md:-mx-8 lg:mx-0 lg:w-full lg:max-w-lg lg:justify-self-center xl:max-w-xl"
           >
             {/*
               Client line: "Every project we take on is designed for
@@ -178,7 +199,11 @@ export function AboutHero() {
               body paragraph in hierarchy and earn its emphasis from brand
               colour instead of scale.
             */}
-            <p className="text-accent max-w-md text-base leading-relaxed">
+            {/*
+              Re-inset off the artwork's full bleed -- only the drawing bleeds
+              to the rails, text stays on the gutter grid.
+            */}
+            <p className="text-accent max-w-md px-6 text-base leading-relaxed md:px-8 lg:px-0">
               Every project we take on is built for years, not quarters.
             </p>
 

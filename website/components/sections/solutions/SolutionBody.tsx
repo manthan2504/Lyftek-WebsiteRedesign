@@ -100,7 +100,7 @@ function CapabilityGrid({
         <div
           key={cap.title}
           className={cn(
-            "border-border flex flex-col gap-3 p-8 lg:p-10",
+            "border-border flex flex-col gap-3 p-6 xs:p-8 lg:p-10",
             cellBorders(index, items.length, lgCols),
           )}
         >
@@ -148,10 +148,10 @@ export function SolutionBody({ solution }: { solution: SolutionDetail }) {
               whileInView="visible"
               viewport={{ once: true, margin: "-80px" }}
               variants={fadeUp}
-              className={`flex flex-col px-6 py-24 md:px-8 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
+              className={`flex flex-col px-6 py-16 xs:py-20 md:px-8 md:py-24 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
             >
               <SectionEyebrow>The problem</SectionEyebrow>
-              <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-3xl tracking-tight sm:text-4xl">
+              <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-2xl tracking-tight xs:text-3xl sm:text-4xl">
                 {solution.challenges.heading}
               </h2>
               <ul className="text-foreground-secondary mt-10 flex max-w-3xl flex-col gap-4 text-lg leading-relaxed">
@@ -178,10 +178,10 @@ export function SolutionBody({ solution }: { solution: SolutionDetail }) {
             whileInView="visible"
             viewport={{ once: true, margin: "-80px" }}
             variants={fadeUp}
-            className={`flex flex-col px-6 py-24 md:px-8 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
+            className={`flex flex-col px-6 py-16 xs:py-20 md:px-8 md:py-24 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
           >
             <SectionEyebrow>Capabilities</SectionEyebrow>
-            <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-3xl tracking-tight sm:text-4xl">
+            <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-2xl tracking-tight xs:text-3xl sm:text-4xl">
               {solution.capabilities.heading}
             </h2>
             <CapabilityGrid items={solution.capabilities.items} />
@@ -199,10 +199,10 @@ export function SolutionBody({ solution }: { solution: SolutionDetail }) {
               whileInView="visible"
               viewport={{ once: true, margin: "-80px" }}
               variants={fadeUp}
-              className={`flex flex-col px-6 py-24 md:px-8 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
+              className={`flex flex-col px-6 py-16 xs:py-20 md:px-8 md:py-24 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
             >
               <SectionEyebrow>Scope</SectionEyebrow>
-              <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-3xl tracking-tight sm:text-4xl">
+              <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-2xl tracking-tight xs:text-3xl sm:text-4xl">
                 {solution.process.heading}
               </h2>
 
@@ -242,10 +242,10 @@ export function SolutionBody({ solution }: { solution: SolutionDetail }) {
             whileInView="visible"
             viewport={{ once: true, margin: "-80px" }}
             variants={fadeUp}
-            className={`flex flex-col px-6 py-24 md:px-8 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
+            className={`flex flex-col px-6 py-16 xs:py-20 md:px-8 md:py-24 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
           >
             <SectionEyebrow>Outcomes</SectionEyebrow>
-            <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-3xl tracking-tight sm:text-4xl">
+            <h2 className="font-rinter text-foreground mt-4 max-w-3xl text-2xl tracking-tight xs:text-3xl sm:text-4xl">
               {solution.benefits.heading}
             </h2>
             <CapabilityGrid items={solution.benefits.items} />

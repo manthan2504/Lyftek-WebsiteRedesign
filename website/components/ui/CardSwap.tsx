@@ -146,7 +146,17 @@ const placeNow = (el: HTMLElement, slot: Slot, skew: number) =>
 const ANCHOR_CLASSES: Record<NonNullable<CardSwapProps["anchor"]>, string> = {
   "bottom-right":
     "right-0 bottom-0 origin-bottom-right translate-x-[5%] translate-y-[20%] max-[768px]:translate-x-[25%] max-[768px]:translate-y-[25%] max-[768px]:scale-[0.75] max-[480px]:translate-x-[25%] max-[480px]:translate-y-[25%] max-[480px]:scale-[0.55]",
-  "top-left": "top-0 left-0 origin-top-left max-[768px]:scale-[0.75] max-[480px]:scale-[0.55]",
+  /*
+   * No mobile `scale-*` here (removed 2026-08-11). Those were React Bits'
+   * demo tuning for the `bottom-right` recipe, where the stack sits proud of
+   * its box and shrinking it is the point. For `top-left` -- which this site
+   * uses precisely because it keeps the card's top-left content anchored --
+   * scaling shrinks the CARD TYPE too, and at 480px the 0.55 factor put the
+   * body copy at ~6.6px effective. Consumers should size the card via the
+   * `width` prop (e.g. `min(560px, 100%)`) so it fits its container at full
+   * type size instead.
+   */
+  "top-left": "top-0 left-0 origin-top-left",
 };
 
 const CardSwap: React.FC<CardSwapProps> = ({

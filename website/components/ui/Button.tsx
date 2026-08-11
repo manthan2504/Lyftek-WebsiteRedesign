@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { MouseEventHandler, ReactNode } from "react";
+import type { MouseEventHandler, ReactNode, Ref } from "react";
 import { cn } from "@/utils/cn";
 
 export type ButtonVariant = "primary" | "outline" | "ghost";
@@ -16,6 +16,12 @@ interface ButtonProps {
   type?: "button" | "submit" | "reset";
   /** Native-button only -- ignored when `href` renders this as a Link. */
   disabled?: boolean;
+  /**
+   * Native-button only. React 19 treats `ref` as an ordinary prop, so no
+   * `forwardRef` wrapper is needed. Added for Navbar's mobile toggle, which
+   * has to take focus back when Escape closes the drawer.
+   */
+  ref?: Ref<HTMLButtonElement>;
   "aria-label"?: string;
   "aria-expanded"?: boolean;
   "aria-controls"?: string;
@@ -34,8 +40,8 @@ const VARIANT_STYLES: Record<ButtonVariant, string> = {
 };
 
 const SIZE_STYLES: Record<ButtonSize, string> = {
-  md: "h-10 px-5 text-sm",
-  icon: "h-10 w-10",
+  md: "h-11 px-5 text-sm",
+  icon: "h-11 w-11",
 };
 
 /**
@@ -58,6 +64,7 @@ export function Button({
   onClick,
   type = "button",
   disabled,
+  ref,
   ...aria
 }: ButtonProps) {
   const classes = cn(
@@ -91,6 +98,7 @@ export function Button({
 
   return (
     <button
+      ref={ref}
       type={type}
       className={classes}
       onClick={onClick}

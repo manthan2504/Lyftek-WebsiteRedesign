@@ -188,7 +188,7 @@ export function ContactForm() {
         error={errors.message}
       />
       <div>
-        <Button type="submit" variant="primary">
+        <Button type="submit" variant="primary" className="w-full sm:w-auto">
           Send Message
         </Button>
       </div>

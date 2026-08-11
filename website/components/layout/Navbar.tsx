@@ -151,6 +151,7 @@ export function Navbar() {
   // measurement is relative to; `linkRefs` is populated by each Link's
   // callback ref below so `measureIndicator` can look one up by href
   // without re-querying the DOM.
+  const mobileToggleRef = useRef<HTMLButtonElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const linkRefs = useRef<Map<string, HTMLAnchorElement>>(new Map());
   const [indicator, setIndicator] = useState({ left: 0, width: 0, visible: false });
@@ -191,6 +192,29 @@ export function Navbar() {
     window.addEventListener("resize", measureIndicator);
     return () => window.removeEventListener("resize", measureIndicator);
   }, [measureIndicator]);
+
+  /*
+   * Escape closes the mobile menu, and focus returns to the toggle.
+   *
+   * This behaviour was DOCUMENTED in this file's header ("Escape closes the
+   * mobile menu") but never actually implemented -- there was no keydown
+   * listener anywhere in the component. Found during the 2026-08-11
+   * responsive/a11y pass.
+   *
+   * Focus return matters as much as the close: the toggle is the element
+   * that opened the menu, and without moving focus back a keyboard user is
+   * left on a detached node and continues tabbing from <body>.
+   */
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setIsMobileMenuOpen(false);
+      mobileToggleRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isMobileMenuOpen]);
 
   /*
    * Suppresses the desktop mega-menu after a pointer click on one of its
@@ -736,6 +760,7 @@ export function Navbar() {
             className="lg:hidden"
             aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={isMobileMenuOpen}
+            ref={mobileToggleRef}
             aria-controls="mobile-menu"
             onClick={() => setIsMobileMenuOpen((open) => !open)}
           >
@@ -758,21 +783,69 @@ export function Navbar() {
               className="border-panel-border overflow-hidden border-t lg:hidden"
             >
               <div className="flex flex-col gap-1 px-6 py-4">
-                {NAV_LINKS.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    aria-current={isActiveLink(link.href) ? "page" : undefined}
-                    className={cn(
-                      "focus-visible:ring-accent font-martian-mono rounded-md px-3 py-2.5 text-base font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
-                      isActiveLink(link.href)
-                        ? "bg-surface text-foreground"
-                        : "text-foreground-secondary hover:bg-surface-hover hover:text-foreground",
-                    )}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+                {NAV_LINKS.map((link) => {
+                  const dropdown = NAV_DROPDOWNS[link.href];
+                  /*
+                   * The mega-menu's children are mirrored into the drawer
+                   * (2026-08-11 responsive pass). Previously the drawer
+                   * carried only the 6 top-level NAV_LINKS, so every
+                   * mega-menu child was desktop-only.
+                   *
+                   * For most of them that was survivable -- the 8 service
+                   * pillars are all rendered by the /#services section and 9
+                   * of the 13 solutions by the /solutions index, so the
+                   * destinations stayed reachable at every width, just via an
+                   * extra hop. But FOUR healthcare items (AI Agents,
+                   * Patient Engagement, Specialty Solutions, Integrations)
+                   * have `href: "/solutions"` and no SOLUTION_DETAILS entry,
+                   * so the index never renders them: below 1024px those four
+                   * strings did not exist anywhere on the site. That breaks
+                   * the client's "every component visible at every viewport"
+                   * rule outright.
+                   *
+                   * Mirroring the whole dropdown rather than special-casing
+                   * those four keeps desktop and mobile navigation at genuine
+                   * parity, so this can't silently regress the next time a
+                   * child is added to one list and not the other.
+                   */
+                  const children = !dropdown
+                    ? []
+                    : dropdown.kind === "services"
+                      ? SERVICE_PILLARS.map((p) => ({ label: p.label, href: p.href }))
+                      : SOLUTION_CATEGORIES.flatMap((c) => c.items);
+
+                  return (
+                    <div key={link.href} className="flex flex-col">
+                      <Link
+                        href={link.href}
+                        aria-current={isActiveLink(link.href) ? "page" : undefined}
+                        className={cn(
+                          "focus-visible:ring-accent font-martian-mono rounded-md px-3 py-2.5 text-base font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                          isActiveLink(link.href)
+                            ? "bg-surface text-foreground"
+                            : "text-foreground-secondary hover:bg-surface-hover hover:text-foreground",
+                        )}
+                      >
+                        {link.label}
+                      </Link>
+
+                      {children.length > 0 && (
+                        <ul className="border-panel-border mt-1 mb-2 ml-3 flex flex-col border-l pl-3">
+                          {children.map((child, index) => (
+                            <li key={`${child.href}-${index}`}>
+                              <Link
+                                href={child.href}
+                                className="focus-visible:ring-accent text-foreground-muted hover:text-foreground block rounded-md px-3 py-2.5 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                              >
+                                {child.label}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
                 <Button
                   href={PRIMARY_CTA.href}
                   variant="primary"
