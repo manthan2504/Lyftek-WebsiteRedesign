@@ -43,6 +43,20 @@ const item = {
 const ROW_CLASSES =
   "group border-border focus-visible:ring-accent flex items-start gap-4 border-b py-5 transition-colors focus-visible:ring-2 focus-visible:outline-none hover:bg-surface/40";
 
+// Email/Office rows' hover arrow: rolled back to `ArrowUpRight` per direct
+// client instruction (2026-08-11) after a same-day detour into a bordered
+// "boxy" version -- the client wanted the original diagonal icon kept, not
+// replaced. Two position attempts followed: first `ml-auto` (pushed the
+// arrow to the row's far-right edge, reported as feeling disconnected from
+// short content), then `ml-4` as a sibling of the label/value block (a
+// fixed gap, but still positioned against the whole row rather than the
+// text itself). Final placement -- this pass -- puts the icon INSIDE the
+// value line (`{COMPANY_EMAIL}<ArrowUpRight .../>`, and the same inside
+// `<address>`), so it sits immediately after the actual email/address text
+// on the same line, which is what "beside the text" turned out to mean:
+// beside the VALUE, not centred against the row that also contains the
+// icon and uppercase label above it.
+
 /**
  * Purpose: the /contact page's primary section -- the page's entire job in
  * one screen. Left column: who to talk to and how to reach them directly.
@@ -180,17 +194,26 @@ export function ContactSection() {
                   <span className="text-foreground-muted font-mono text-xs font-semibold tracking-[0.15em] uppercase">
                     Email
                   </span>
-                  <span className="text-foreground group-hover:text-accent text-base transition-colors">
+                  <span className="text-foreground group-hover:text-accent inline-flex items-center gap-2 text-base transition-colors">
                     {COMPANY_EMAIL}
+                    <ArrowUpRight
+                      aria-hidden
+                      size={14}
+                      className="shrink-0 translate-x-1 opacity-0 transition-all duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100"
+                    />
                   </span>
                 </span>
-                <ArrowUpRight
-                  aria-hidden
-                  size={14}
-                  className="text-foreground-muted mt-1 ml-auto shrink-0 translate-x-1 opacity-0 transition-all duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100"
-                />
               </a>
 
+              {/*
+                No arrow here, direct client request (2026-08-11): a phone
+                number isn't a "go to" action the way email (opens a mail
+                client) and office (opens Maps) are -- on desktop a `tel:`
+                link often just sits there, so an arrow implying navigation
+                would be misleading. The row keeps its other hover
+                affordances (background tint, text turning accent) so it
+                still reads as clickable, just without the arrow.
+              */}
               <a
                 href={`tel:${COMPANY_PHONE.replace(/\s+/g, "")}`}
                 className={ROW_CLASSES}
@@ -209,11 +232,6 @@ export function ContactSection() {
                     {COMPANY_PHONE}
                   </span>
                 </span>
-                <ArrowUpRight
-                  aria-hidden
-                  size={14}
-                  className="text-foreground-muted mt-1 ml-auto shrink-0 translate-x-1 opacity-0 transition-all duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100"
-                />
               </a>
 
               {/*
@@ -243,13 +261,13 @@ export function ContactSection() {
                   </span>
                   <address className="text-foreground group-hover:text-accent max-w-sm text-base leading-relaxed transition-colors not-italic">
                     {COMPANY_ADDRESS}
+                    <ArrowUpRight
+                      aria-hidden
+                      size={14}
+                      className="ml-2 inline-block translate-x-1 align-middle opacity-0 transition-all duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100"
+                    />
                   </address>
                 </span>
-                <ArrowUpRight
-                  aria-hidden
-                  size={14}
-                  className="text-foreground-muted mt-1 ml-auto shrink-0 translate-x-1 opacity-0 transition-all duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100"
-                />
               </a>
             </div>
           </motion.div>

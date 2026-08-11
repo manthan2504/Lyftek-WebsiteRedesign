@@ -1,6 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -100,16 +106,91 @@ const NAV_DROPDOWNS: Record<string, DropdownKind> = {
  * Desktop link interaction (researched against Stripe/Vercel/Linear vs.
  * IBM/Microsoft/GitHub -- see claudeContextExchange.md for the full
  * precedent comparison): the active link gets a flat 2px accent underline
- * that slides between links via Framer Motion's layoutId (functional
- * wayfinding, not decoration); inactive links get a fast CSS-only
+ * that slides between links; inactive links get a fast CSS-only
  * underline-grow on hover/focus. Deliberately NOT done: glow/shadow on the
  * indicator, or an always-on blurred/translucent background -- both would
  * tip into the effects 04_VISUAL_LANGUAGE.md explicitly bans.
+ *
+ * THE SLIDING INDICATOR IS A SINGLE MEASURED ELEMENT, NOT A PER-LINK
+ * `layoutId` (rebuilt 2026-08-10, client-reported bug: "the underline...
+ * goes fast, and moves from diagonal random direction... must be
+ * consistent, must smoothly move horizontally on navbar only"). The first
+ * version rendered a separate `motion.line` under whichever link was
+ * active and let Framer Motion's `layoutId` FLIP between the outgoing and
+ * incoming instances. That works cleanly for a simple A-to-B move, but this
+ * nav has pages where NO top-level link matches at all (every `/services/
+ * [slug]` and `/solutions/[slug]` detail route -- `isActiveLink` only
+ * matches `/`, `/about`, `/solutions`, `/careers`, `/contact` exactly/by
+ * prefix, not the "#services" hash `NAV_LINKS` uses for Services or any
+ * detail-page path). Landing on one of those unmounts the indicator
+ * entirely; the NEXT top-level click then has no outgoing instance for
+ * Framer Motion to FLIP from, so it has to fall back to some other
+ * start point -- inconsistent by construction, not a one-off glitch.
+ *
+ * Fixed by making the indicator ONE persistent element (rendered once,
+ * directly in `<nav>`, never unmounted) whose `left`/`width` are
+ * explicitly measured off the real active link's `getBoundingClientRect()`
+ * (`measureIndicator`, below) and animated via plain `animate={{ left,
+ * width }}` -- `top`/`bottom` are fixed in the className and never enter
+ * the animated properties, so there is no value for it to interpolate
+ * vertically even in principle. Re-measured on route change
+ * (`useLayoutEffect`, so the correct rect is committed before paint -- no
+ * one-frame flash at the old position) and on window resize. When no link
+ * matches (the detail-page case above), it fades out in place via
+ * `opacity` rather than unmounting, so the next real match always has a
+ * consistent last-known `left`/`width` to animate from instead of an
+ * undefined starting point.
  */
 export function Navbar() {
   const pathname = usePathname();
   const prefersReducedMotion = useReducedMotion();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // See the component docblock's "THE SLIDING INDICATOR IS A SINGLE
+  // MEASURED ELEMENT" section. `navRef` is the coordinate space every
+  // measurement is relative to; `linkRefs` is populated by each Link's
+  // callback ref below so `measureIndicator` can look one up by href
+  // without re-querying the DOM.
+  const navRef = useRef<HTMLElement>(null);
+  const linkRefs = useRef<Map<string, HTMLAnchorElement>>(new Map());
+  const [indicator, setIndicator] = useState({ left: 0, width: 0, visible: false });
+
+  const measureIndicator = useCallback(() => {
+    // Inlined rather than calling `isActiveLink` (defined further down):
+    // that closure is recreated every render, which would make it an
+    // unstable dependency here. Same two-line rule, just not shared.
+    const activeLink = NAV_LINKS.find((link) =>
+      link.href === "/" ? pathname === "/" : pathname.startsWith(link.href),
+    );
+    const linkEl = activeLink ? linkRefs.current.get(activeLink.href) : undefined;
+
+    if (!linkEl || !navRef.current) {
+      // Fades out in place (last-known left/width kept) rather than
+      // snapping to 0 -- see the docblock for why an undefined starting
+      // point for the NEXT match is exactly the inconsistency being fixed.
+      setIndicator((prev) => ({ ...prev, visible: false }));
+      return;
+    }
+
+    const linkRect = linkEl.getBoundingClientRect();
+    const navRect = navRef.current.getBoundingClientRect();
+    setIndicator({ left: linkRect.left - navRect.left, width: linkRect.width, visible: true });
+  }, [pathname]);
+
+  // `useLayoutEffect`, not `useEffect`: commits the correct rect before the
+  // browser paints the new route, so there is no one-frame flash at the
+  // indicator's previous position.
+  useLayoutEffect(() => {
+    measureIndicator();
+  }, [measureIndicator]);
+
+  // Link widths are fixed-font/fixed-text, so this only matters for the
+  // rare case of a resize crossing the `lg` breakpoint where the desktop
+  // nav itself toggles display -- cheap enough not to debounce.
+  useEffect(() => {
+    window.addEventListener("resize", measureIndicator);
+    return () => window.removeEventListener("resize", measureIndicator);
+  }, [measureIndicator]);
 
   /*
    * Suppresses the desktop mega-menu after a pointer click on one of its
@@ -241,7 +322,8 @@ export function Navbar() {
 
           <nav
             aria-label="Primary"
-            className="hidden lg:flex lg:items-center lg:gap-8"
+            ref={navRef}
+            className="relative hidden lg:flex lg:items-center lg:gap-8"
           >
             {NAV_LINKS.map((link) => {
               const active = isActiveLink(link.href);
@@ -274,6 +356,10 @@ export function Navbar() {
                   }
                 >
                   <Link
+                    ref={(el) => {
+                      if (el) linkRefs.current.set(link.href, el);
+                      else linkRefs.current.delete(link.href);
+                    }}
                     href={link.href}
                     aria-current={active ? "page" : undefined}
                     aria-haspopup={dropdown ? "true" : undefined}
@@ -319,25 +405,14 @@ export function Navbar() {
                         className="shrink-0 rotate-180 transition-transform duration-200 ease-out group-hover/item:rotate-0 group-focus-within/item:rotate-0"
                       />
                     )}
-                    {active ? (
-                      // Shared-layout indicator: Framer Motion animates this
-                      // sliding smoothly to whichever link is active, instead of
-                      // just appearing/disappearing. Flat 2px accent bar, no
-                      // glow/shadow -- 04_VISUAL_LANGUAGE.md bans glow effects
-                      // regardless of how subtle.
-                      <motion.span
-                        layoutId="nav-active-indicator"
-                        transition={{
-                          duration: prefersReducedMotion ? 0 : 0.2,
-                          ease: "easeOut",
-                        }}
-                        className="bg-accent absolute inset-x-0 -bottom-1 h-[2px] rounded-full"
-                      />
-                    ) : (
+                    {!active && (
                       // Hover-only underline, CSS transform only (no Framer
                       // Motion needed for a plain hover state per
                       // 13_MOTION_AND_ANIMATION.md's "CSS first" guidance).
                       // Also triggers on keyboard focus, not just mouse hover.
+                      // Skipped on the active link -- the shared indicator
+                      // below already marks it, so there's nothing for a
+                      // second, redundant underline to add on hover.
                       <span
                         aria-hidden
                         className="bg-foreground-secondary absolute inset-x-0 -bottom-1 h-[1.5px] origin-left scale-x-0 rounded-full transition-transform duration-150 ease-out group-hover:scale-x-100 group-focus-visible:scale-x-100"
@@ -624,6 +699,29 @@ export function Navbar() {
                 </div>
               );
             })}
+
+            {/* The shared sliding indicator -- see the component docblock's
+                "THE SLIDING INDICATOR IS A SINGLE MEASURED ELEMENT" section.
+                One persistent element, `left`/`width` explicitly measured
+                and animated; `top`/`bottom` are fixed in the className and
+                never enter `animate`, so vertical movement isn't possible
+                even in principle. Flat 2px accent bar, no glow/shadow --
+                04_VISUAL_LANGUAGE.md bans glow effects regardless of how
+                subtle. */}
+            <motion.span
+              aria-hidden
+              initial={false}
+              animate={{
+                left: indicator.left,
+                width: indicator.width,
+                opacity: indicator.visible ? 1 : 0,
+              }}
+              transition={{
+                duration: prefersReducedMotion ? 0 : 0.32,
+                ease: "easeOut",
+              }}
+              className="bg-accent pointer-events-none absolute -bottom-1 h-[2px] rounded-full"
+            />
           </nav>
 
           <div className="hidden lg:block">

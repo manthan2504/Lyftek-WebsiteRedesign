@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowLeft, ArrowUpRight } from "@phosphor-icons/react";
 import { SectionEyebrow } from "@/components/ui/SectionEyebrow";
 import { NumberedGrid } from "@/components/ui/NumberedGrid";
-import { CybersecurityIllustration } from "./CybersecurityIllustration";
 import {
   DASHBOARD_CONTAINER,
   PANEL_CONTAINER_NESTED,
@@ -44,25 +43,17 @@ const fadeUp = item;
  * extends that decision without reversing it.
  */
 /**
- * Per-service hero artwork. A map rather than a prop threaded down from the
- * page, so adding the next illustration is one line here and nothing else
- * changes -- and services without one keep the single-column hero rather
- * than reserving empty space for art that does not exist.
+ * Per-service hero artwork was tried three ways -- raster generation
+ * (blocked, no usable model on the connected MCP's free plan), a
+ * hand-authored isometric SVG (`CybersecurityIllustration.tsx`, kept
+ * unused in this folder as a record of why it did not work: elements
+ * floated off the surfaces they were meant to stand on), and an HTML/CSS/
+ * Framer Motion diagram (`CybersecurityHeroVisual.tsx`, likewise kept
+ * unused) -- and removed per the client's direct instruction: no
+ * illustration slot on this hero at all. Every service now gets the same
+ * single-column hero unconditionally.
  */
-// `Partial<Record<...>>`, not a bare `Record`: with a plain Record,
-// TypeScript types an indexed lookup as always-present, so `if
-// (Illustration)` is flagged as a condition that can never be false --
-// which is exactly backwards, since most services have no artwork. Partial
-// gives the lookup its honest `| undefined`.
-const SERVICE_ILLUSTRATIONS: Partial<
-  Record<string, (props: React.SVGProps<SVGSVGElement>) => React.JSX.Element>
-> = {
-  "cybersecurity-isms": CybersecurityIllustration,
-};
-
 export function ServiceHero({ service }: { service: ServiceDetail }) {
-  const Illustration = SERVICE_ILLUSTRATIONS[service.slug];
-
   return (
     <section
       className={`bg-panel border-border relative border-x ${DASHBOARD_CONTAINER}`}
@@ -83,49 +74,24 @@ export function ServiceHero({ service }: { service: ServiceDetail }) {
             </Link>
           </motion.div>
 
-          {/*
-            Two columns only when this service actually has artwork -- the
-            same `hidden lg:flex` treatment AboutHero uses, so the graphic
-            never competes with the copy at tablet and below, where it would
-            be squeezed to the point of being unreadable rather than
-            informative.
-          */}
-          <div
-            className={
-              Illustration
-                ? "mt-10 grid grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16"
-                : "mt-10"
-            }
-          >
-            <div className="flex flex-col items-start">
-              <motion.div variants={item}>
-                <SectionEyebrow>What We Do</SectionEyebrow>
-              </motion.div>
+          <div className="mt-10 flex flex-col items-start">
+            <motion.div variants={item}>
+              <SectionEyebrow>What We Do</SectionEyebrow>
+            </motion.div>
 
-              <motion.h1
-                variants={item}
-                className="font-rinter text-foreground mt-4 max-w-4xl text-4xl tracking-tight sm:text-5xl lg:text-6xl"
-              >
-                {service.title}
-              </motion.h1>
+            <motion.h1
+              variants={item}
+              className="font-rinter text-foreground mt-4 max-w-4xl text-4xl tracking-tight sm:text-5xl lg:text-6xl"
+            >
+              {service.title}
+            </motion.h1>
 
-              <motion.p
-                variants={item}
-                className="text-foreground-secondary mt-8 max-w-3xl text-lg leading-relaxed"
-              >
-                {service.summary}
-              </motion.p>
-            </div>
-
-            {Illustration && (
-              <motion.div
-                variants={item}
-                aria-hidden
-                className="hidden lg:block"
-              >
-                <Illustration className="h-auto w-full" />
-              </motion.div>
-            )}
+            <motion.p
+              variants={item}
+              className="text-foreground-secondary mt-8 max-w-3xl text-lg leading-relaxed"
+            >
+              {service.summary}
+            </motion.p>
           </div>
         </motion.div>
       </div>

@@ -2,8 +2,8 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowUpRight } from "@phosphor-icons/react";
 import { SectionEyebrow } from "@/components/ui/SectionEyebrow";
+import { RowArrow } from "@/components/ui/RowArrow";
 import {
   DASHBOARD_CONTAINER,
   PANEL_CONTAINER_NESTED,
@@ -135,11 +135,7 @@ export function SolutionsIndex() {
                       <p className="text-foreground-muted flex-1 text-sm leading-relaxed">
                         {solution.summary}
                       </p>
-                      <ArrowUpRight
-                        aria-hidden
-                        size={18}
-                        className="text-foreground-muted mt-1 shrink-0 translate-x-1 opacity-0 transition-all duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100"
-                      />
+                      <RowArrow />
                     </Link>
                   ))}
                 </div>

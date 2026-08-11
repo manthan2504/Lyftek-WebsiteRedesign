@@ -21,6 +21,38 @@ const SERVICE_OPTIONS = [
   { label: "Something else", value: "other" },
 ];
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+type FieldErrors = Partial<
+  Record<"name" | "email" | "company" | "service" | "message", string>
+>;
+
+/**
+ * Required-field + email-format checks, run against the form's own
+ * `FormData` at submit time. All fields are read as uncontrolled (native
+ * `<form>` submission), so validation reads from `FormData` rather than
+ * component state -- no separate controlled-value tracking needed just to
+ * check what was typed.
+ */
+function validate(formData: FormData): FieldErrors {
+  const errors: FieldErrors = {};
+
+  const name = String(formData.get("name") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim();
+  const company = String(formData.get("company") ?? "").trim();
+  const service = String(formData.get("service") ?? "").trim();
+  const message = String(formData.get("message") ?? "").trim();
+
+  if (!name) errors.name = "Enter your name.";
+  if (!email) errors.email = "Enter your business email.";
+  else if (!EMAIL_PATTERN.test(email)) errors.email = "Enter a valid email address.";
+  if (!company) errors.company = "Enter your company name.";
+  if (!service) errors.service = "Select a service.";
+  if (!message) errors.message = "Tell us what you're trying to build.";
+
+  return errors;
+}
+
 /**
  * Purpose: the site's single inquiry form -- fields, submission handling,
  * and the post-submit confirmation state. Extracted 2026-08-10 from
@@ -53,21 +85,35 @@ const SERVICE_OPTIONS = [
  * critique of the live site's 3-field form (Name / Mobile / Message only,
  * capturing neither a business email nor what the visitor actually needed).
  *
+ * VALIDATION: required-field + email-format checks (`validate()` above),
+ * run on submit against the form's own `FormData`. Errors surface through
+ * each field's existing `error` prop (Input/Select/Textarea already support
+ * this -- see Input.tsx's docblock -- this is the first consumer that
+ * actually wires it up rather than leaving it unused). `noValidate` on the
+ * `<form>` turns off the browser's own validation bubbles so this custom,
+ * on-brand error state is the only one a visitor sees.
+ *
  * SUBMISSION: still intentionally stubbed, unchanged by the extraction.
  * Where this should actually submit to (transactional email service, CRM
  * webhook, a Next.js Route Handler) has not been decided -- a technical
  * dependency separate from the visual/content build, not something to guess
- * at here. `handleSubmit` prevents the native page reload and flips into a
- * confirmation state so the form is interactively complete without a real
- * network call. Swapping the body of `handleSubmit` for a real request is
- * now a ONE-place change that both consumers inherit, which is a second,
- * concrete benefit of the extraction.
+ * at here. `handleSubmit` prevents the native page reload, validates, and
+ * (once valid) flips into a confirmation state so the form is interactively
+ * complete without a real network call. Swapping the body of `handleSubmit`
+ * for a real request is now a ONE-place change that both consumers inherit,
+ * which is a second, concrete benefit of the extraction.
  */
 export function ContactForm() {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    const nextErrors = validate(new FormData(event.currentTarget));
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
     // Stub -- see docblock. Real integration (email/CRM/Route Handler) is a
     // separate, undecided technical dependency.
     setIsSubmitted(true);
@@ -95,13 +141,20 @@ export function ContactForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <Input label="Name" name="name" autoComplete="name" required />
+        <Input
+          label="Name"
+          name="name"
+          autoComplete="name"
+          required
+          error={errors.name}
+        />
         <Input
           label="Business Email"
           name="email"
           type="email"
           autoComplete="email"
           required
+          error={errors.email}
         />
       </div>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -110,6 +163,7 @@ export function ContactForm() {
           name="company"
           autoComplete="organization"
           required
+          error={errors.company}
         />
         <Input
           label="Mobile Number (optional)"
@@ -124,12 +178,14 @@ export function ContactForm() {
         options={SERVICE_OPTIONS}
         placeholder="Select a service"
         required
+        error={errors.service}
       />
       <Textarea
         label="Message"
         name="message"
         placeholder="What are you trying to build?"
         required
+        error={errors.message}
       />
       <div>
         <Button type="submit" variant="primary">

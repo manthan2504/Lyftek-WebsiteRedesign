@@ -96,20 +96,17 @@ const item = {
  * just `stroke="currentColor"` on the parent `<g>` (the source is stroke
  * art, not filled regions, so no mask indirection is needed at all).
  *
- * SIZING/POSITION: `lg:max-w-sm xl:max-w-md` + `h-auto` on this wrapper --
- * capped to a size that reads as a companion visual next to the copy
- * column, not a competing full-height block (see the `items-center` note
- * above for why the earlier full-height version was reverted). Went
- * through two more size passes the same session: `max-w-md`/`max-w-lg`
- * read too heavy next to the text column, `max-w-xs`/`max-w-sm` was then
- * bumped back up one notch per client follow-up ("increase its size
- * slightly"). Grid gap bumped to `lg:gap-16` (from `lg:gap-8`) to match
- * `About.tsx`'s own two-column split further down this same page (its
- * `gap-16`/`lg:gap-12`, the closest in-repo precedent for this kind of
- * text+visual split) -- and the wrapper's own `lg:mr-10 xl:mr-14` (from
- * `lg:mr-6`) pulls the illustration further off the section's right edge
- * so it reads centered in its own half rather than pinned to the
- * boundary, per the same follow-up ("move it slightly left").
+ * SIZING/POSITION: `lg:max-w-lg xl:max-w-xl` + `h-auto` on this wrapper,
+ * centered in its own grid column via `justify-self-center` + `mx-auto`
+ * (2026-08-10, client: "increase the size and align at center" -- prior
+ * to this it was right-pinned via `justify-self-end` + `lg:mr-10 xl:mr-14`
+ * at `max-w-sm`/`max-w-md`). This same request also reverted a same-day
+ * detour into hand-editing the SVG's own geometry (tilting the isometric
+ * block to better match the real logo) back to the client-supplied
+ * source paths in `AboutHeroIllustration.tsx` -- the client wants THIS
+ * illustration shown bigger and centered, not reshaped. Grid gap stays
+ * `lg:gap-16` (matches `About.tsx`'s own two-column split further down
+ * this same page).
  */
 export function AboutHero() {
   return (
@@ -156,12 +153,45 @@ export function AboutHero() {
             </motion.p>
           </div>
 
+          {/*
+            `aria-hidden` sits on the illustration itself, NOT on this
+            wrapper -- it used to wrap the whole column, which was fine while
+            the column held only decoration, but the statement line below is
+            real copy and has to stay in the accessibility tree.
+          */}
           <motion.div
             variants={item}
-            aria-hidden
-            className="hidden justify-self-end lg:mr-10 lg:flex lg:w-full lg:max-w-sm xl:mr-14 xl:max-w-md"
+            className="hidden justify-self-center lg:flex lg:w-full lg:max-w-lg lg:flex-col xl:max-w-xl"
           >
-            <AboutHeroIllustration className="text-foreground h-auto w-full" />
+            {/*
+              Client line: "Every project we take on is designed for
+              long-term success." Reworded per Docs/content_writing.md --
+              "long-term success" is exactly the vague promise that doc rules
+              out, so the claim is made concrete with a time horizon a CTO
+              actually budgets against. "years, not quarters" also keeps it
+              off the same ground as the body paragraph's "work designed to
+              outlast the project that started it", which otherwise says the
+              same thing twice on one screen.
+
+              Lime `text-accent` rather than a heading size: this is a
+              supporting statement, so it should read under the H1 and the
+              body paragraph in hierarchy and earn its emphasis from brand
+              colour instead of scale.
+            */}
+            <p className="text-accent max-w-md text-base leading-relaxed">
+              Every project we take on is built for years, not quarters.
+            </p>
+
+            {/*
+              `mt-6` not `mt-12`: the drawn artwork starts ~4% below the top
+              of its own viewBox (the block's peak sits at y=43 of 1151), so
+              the box gap understates the gap you actually see. 24px of margin
+              still leaves ~40px of visual clearance under the statement.
+            */}
+            <AboutHeroIllustration
+              aria-hidden
+              className="text-foreground mx-auto mt-6 h-auto w-full"
+            />
           </motion.div>
         </motion.div>
       </div>

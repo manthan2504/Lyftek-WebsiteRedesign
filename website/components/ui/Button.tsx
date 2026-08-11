@@ -14,6 +14,8 @@ interface ButtonProps {
   className?: string;
   onClick?: MouseEventHandler;
   type?: "button" | "submit" | "reset";
+  /** Native-button only -- ignored when `href` renders this as a Link. */
+  disabled?: boolean;
   "aria-label"?: string;
   "aria-expanded"?: boolean;
   "aria-controls"?: string;
@@ -55,6 +57,7 @@ export function Button({
   className,
   onClick,
   type = "button",
+  disabled,
   ...aria
 }: ButtonProps) {
   const classes = cn(
@@ -87,7 +90,13 @@ export function Button({
   }
 
   return (
-    <button type={type} className={classes} onClick={onClick} {...aria}>
+    <button
+      type={type}
+      className={classes}
+      onClick={onClick}
+      disabled={disabled}
+      {...aria}
+    >
       {children}
     </button>
   );
