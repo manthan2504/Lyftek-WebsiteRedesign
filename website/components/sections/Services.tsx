@@ -330,7 +330,7 @@ export function Services() {
             //
             // `lg:max-w-none` stays: the two forced lines fit more easily
             // at 36px than they did at 48px, so nothing re-wraps.
-            className="font-rinter text-foreground mt-4 max-w-3xl text-3xl tracking-tight sm:text-4xl lg:max-w-none xl:text-5xl"
+            className="font-rinter text-foreground mt-4 max-w-3xl text-3xl tracking-tight sm:text-4xl lg:max-w-none"
           >
             {/*
               2026-08-08, direct client request: forced two-line break

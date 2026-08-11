@@ -113,7 +113,7 @@ export function TeamSection() {
             <div>
               <SectionEyebrow>Leadership</SectionEyebrow>
 
-              <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl xl:text-5xl">
+              <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl">
                 Our Team
               </h2>
 

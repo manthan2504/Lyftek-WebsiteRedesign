@@ -179,7 +179,7 @@ export function Footer() {
               Empowering digital transformation through intelligent
               technology solutions.
             </p>
-            <div className="-ml-[13px] flex items-center">
+            <div className="flex items-center gap-3 pointer-coarse:-ml-[13px] pointer-coarse:gap-0">
               {SOCIAL_LINKS.map(({ label, href, icon: SocialIcon }) => (
                 <a
                   key={label}
@@ -187,7 +187,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="focus-visible:ring-accent text-foreground-muted hover:text-foreground inline-flex h-11 w-11 items-center justify-center rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                  className="focus-visible:ring-accent text-foreground-muted hover:text-foreground rounded-sm transition-colors pointer-coarse:inline-flex pointer-coarse:h-11 pointer-coarse:w-11 pointer-coarse:items-center pointer-coarse:justify-center focus-visible:ring-2 focus-visible:outline-none"
                 >
                   <SocialIcon size={18} />
                 </a>
@@ -225,7 +225,7 @@ export function Footer() {
                 Company
               </h3>
             </div>
-            <ul className="-my-3 flex flex-col">
+            <ul className="flex flex-col gap-2.5 pointer-coarse:-my-3 pointer-coarse:gap-0">
               {COMPANY_LINKS.map((link) => (
                 <li key={link.href}>
                   {/*
@@ -242,7 +242,7 @@ export function Footer() {
                   */}
                   <Link
                     href={link.href}
-                    className="focus-visible:ring-accent text-foreground-muted hover:text-foreground group -mx-2 flex w-fit items-center gap-1 rounded-sm px-2 py-3 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    className="focus-visible:ring-accent text-foreground-muted hover:text-foreground group inline-flex items-center gap-1 rounded-sm text-sm transition-colors pointer-coarse:-mx-2 pointer-coarse:px-2 pointer-coarse:py-3 focus-visible:ring-2 focus-visible:outline-none"
                   >
                     {link.label}
                     <ArrowUpRight
@@ -273,7 +273,7 @@ export function Footer() {
             */}
             <a
               href={`tel:${COMPANY_PHONE.replace(/\s+/g, "")}`}
-              className="focus-visible:ring-accent text-foreground-muted hover:text-foreground group -mx-2 flex w-fit items-center gap-1 rounded-sm px-2 py-3 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+              className="focus-visible:ring-accent text-foreground-muted hover:text-foreground group inline-flex items-center gap-1 rounded-sm text-sm transition-colors pointer-coarse:-mx-2 pointer-coarse:px-2 pointer-coarse:py-3 focus-visible:ring-2 focus-visible:outline-none"
             >
               {COMPANY_PHONE}
               <ArrowUpRight
@@ -284,7 +284,7 @@ export function Footer() {
             </a>
             <a
               href={`mailto:${COMPANY_EMAIL}`}
-              className="focus-visible:ring-accent text-foreground-muted hover:text-foreground group -mx-2 flex w-fit items-center gap-1 rounded-sm px-2 py-3 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+              className="focus-visible:ring-accent text-foreground-muted hover:text-foreground group inline-flex items-center gap-1 rounded-sm text-sm transition-colors pointer-coarse:-mx-2 pointer-coarse:px-2 pointer-coarse:py-3 focus-visible:ring-2 focus-visible:outline-none"
             >
               {COMPANY_EMAIL}
               <ArrowUpRight
@@ -440,7 +440,7 @@ export function Footer() {
             margin, leaving 8px of real clearance between wrapped rows -- the
             same visual spacing as before, with no overlapping hit areas.
           */}
-          <ul className="flex flex-wrap gap-x-5 gap-y-6">
+          <ul className="flex flex-wrap gap-x-5 gap-y-2 pointer-coarse:gap-y-6">
             {POLICY_LINKS.map((link) => (
               <li key={link.href}>
                 <Link
@@ -454,7 +454,7 @@ export function Footer() {
                    * 24x24) with margin; the negative margins keep the
                    * rendered spacing identical to before.
                    */
-                  className="focus-visible:ring-accent text-foreground-muted hover:text-foreground -mx-2 -my-2 inline-block rounded-sm px-2 py-2 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                  className="focus-visible:ring-accent text-foreground-muted hover:text-foreground rounded-sm text-xs transition-colors pointer-coarse:-mx-2 pointer-coarse:-my-2 pointer-coarse:inline-block pointer-coarse:px-2 pointer-coarse:py-2 focus-visible:ring-2 focus-visible:outline-none"
                 >
                   {link.label}
                 </Link>

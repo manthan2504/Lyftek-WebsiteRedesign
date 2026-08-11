@@ -129,9 +129,22 @@
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;
   --breakpoint-lg: 1025px;
-  --breakpoint-xl: 1281px;
+  --breakpoint-xl: 1280px;
   --breakpoint-2xl: 1536px;
 }
+
+/*
+ * `xl` deliberately stays at Tailwind's stock 1280, NOT 1281.
+ *
+ * The client's bands put 1281+ in "desktop", so 1281 looks like the tidier
+ * value -- but moving it changes what renders at exactly 1280px, and 1280 is
+ * inside the client's LAPTOP band, where the design is frozen. Measured: at
+ * 1280 the About illustration went 543x458 -> 512x431 because it fell out of
+ * `xl:max-w-xl` back to `lg:max-w-lg`. Reverted.
+ *
+ * `lg` at 1025 is kept, because the width it changes is exactly 1024 -- and
+ * 1024 sits in the client's TABLET band, which is explicitly allowed to move.
+ */
 
 /*
  * DARK THEME (default)

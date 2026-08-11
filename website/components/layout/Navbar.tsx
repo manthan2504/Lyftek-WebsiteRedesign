@@ -61,6 +61,70 @@ import favicon from "@/assets/favicon.png";
  * columns of plain links) -- a shared array-or-placeholder type stopped
  * fitting once both were real, differently-shaped content.
  */
+/**
+ * Mobile drawer accordion motion (2026-08-11, client reference:
+ * ui.watermelon.sh "Tree-menu").
+ *
+ * The reference component is a DRILL-DOWN -- tapping a parent replaces the
+ * list with its children behind a breadcrumb. What the client actually asked
+ * for is an accordion ("show only main buttons, when clicked then show the
+ * subsections"), so only the reference's MOTION is borrowed, not its
+ * navigation model: 50ms per-child stagger and a 15px rise, both measured off
+ * the live component.
+ *
+ * `custom` carries `prefersReducedMotion`. Reduced motion must kill the
+ * STAGGER, not merely shorten it -- a sequential reveal is exactly the
+ * motion the preference is about -- and drop the y travel to a pure fade.
+ * Height still animates, briefly: snapping a disclosure open is more
+ * disorienting than a short reveal, and the guidance is "reduce", not
+ * "remove". Height is NOT a positional key, so `MotionConfig
+ * reducedMotion="user"` will not gate it for us; it has to be explicit
+ * (same trap the drawer's own `duration` gate documents).
+ */
+const subListVariants = {
+  collapsed: (reduced: boolean) => ({
+    height: 0,
+    opacity: 0,
+    transition: {
+      height: {
+        duration: reduced ? 0.12 : 0.28,
+        ease: [0.4, 0, 0.2, 1] as const,
+      },
+      opacity: { duration: reduced ? 0.08 : 0.15 },
+      staggerChildren: reduced ? 0 : 0.03,
+      staggerDirection: -1 as const,
+    },
+  }),
+  expanded: (reduced: boolean) => ({
+    height: "auto" as const,
+    opacity: 1,
+    transition: {
+      height: {
+        duration: reduced ? 0.12 : 0.32,
+        ease: [0.4, 0, 0.2, 1] as const,
+      },
+      opacity: { duration: reduced ? 0.08 : 0.2 },
+      delayChildren: reduced ? 0 : 0.06,
+      staggerChildren: reduced ? 0 : 0.05,
+    },
+  }),
+};
+
+const subItemVariants = {
+  collapsed: (reduced: boolean) => ({
+    opacity: 0,
+    y: reduced ? 0 : -8,
+  }),
+  expanded: (reduced: boolean) => ({
+    opacity: 1,
+    y: 0,
+    transition: reduced
+      ? { duration: 0.1 }
+      : // Matches the reference's measured ~11.9% overshoot settling in ~300ms.
+        { type: "spring" as const, bounce: 0.2, visualDuration: 0.3 },
+  }),
+};
+
 type DropdownKind = { kind: "services" } | { kind: "solutions" };
 
 const NAV_DROPDOWNS: Record<string, DropdownKind> = {
@@ -145,6 +209,9 @@ export function Navbar() {
   const pathname = usePathname();
   const prefersReducedMotion = useReducedMotion();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // Single-open accordion: our two expandable sections carry 8 and 13 children,
+  // so allowing both would make the drawer ~1000px of scroll on a 667px phone.
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   // See the component docblock's "THE SLIDING INDICATOR IS A SINGLE
   // MEASURED ELEMENT" section. `navRef` is the coordinate space every
@@ -154,7 +221,11 @@ export function Navbar() {
   const mobileToggleRef = useRef<HTMLButtonElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const linkRefs = useRef<Map<string, HTMLAnchorElement>>(new Map());
-  const [indicator, setIndicator] = useState({ left: 0, width: 0, visible: false });
+  const [indicator, setIndicator] = useState({
+    left: 0,
+    width: 0,
+    visible: false,
+  });
 
   const measureIndicator = useCallback(() => {
     // Inlined rather than calling `isActiveLink` (defined further down):
@@ -163,7 +234,9 @@ export function Navbar() {
     const activeLink = NAV_LINKS.find((link) =>
       link.href === "/" ? pathname === "/" : pathname.startsWith(link.href),
     );
-    const linkEl = activeLink ? linkRefs.current.get(activeLink.href) : undefined;
+    const linkEl = activeLink
+      ? linkRefs.current.get(activeLink.href)
+      : undefined;
 
     if (!linkEl || !navRef.current) {
       // Fades out in place (last-known left/width kept) rather than
@@ -175,7 +248,11 @@ export function Navbar() {
 
     const linkRect = linkEl.getBoundingClientRect();
     const navRect = navRef.current.getBoundingClientRect();
-    setIndicator({ left: linkRect.left - navRect.left, width: linkRect.width, visible: true });
+    setIndicator({
+      left: linkRect.left - navRect.left,
+      width: linkRect.width,
+      visible: true,
+    });
   }, [pathname]);
 
   // `useLayoutEffect`, not `useEffect`: commits the correct rect before the
@@ -209,7 +286,11 @@ export function Navbar() {
     if (!isMobileMenuOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      // Escape always closes the WHOLE drawer, never just an expanded
+      // section. Two-stage Escape reads as unresponsive on the first press,
+      // and this file already documents the close+focus-return contract.
       setIsMobileMenuOpen(false);
+      setExpandedKey(null);
       mobileToggleRef.current?.focus();
     };
     window.addEventListener("keydown", onKeyDown);
@@ -247,6 +328,100 @@ export function Navbar() {
    */
   const [isDropdownSuppressed, setIsDropdownSuppressed] = useState(false);
 
+  /*
+   * STRIPE-STYLE DIRECTIONAL PANEL SLIDE (2026-08-11, direct client request:
+   * "when clicked on button that has dropdown like services and solutions,
+   * the dropdown content comes smoothly from left or right when hovered").
+   *
+   * Stripe's nav reads as ONE panel that morphs: move Services -> Solutions
+   * and the outgoing content leaves to the LEFT while the incoming content
+   * arrives from the RIGHT, because that's the direction you travelled along
+   * the navbar. Move back the other way and both reverse.
+   *
+   * This is deliberately NOT a rewrite of how the panel opens. Opening stays
+   * exactly where it was -- pure CSS, `group-hover/item` /
+   * `group-focus-within/item` on the wrapper below. That mechanism carries a
+   * lot of hard-won behaviour (the hover bridge, keyboard `focus-within`,
+   * caret rotation, `isDropdownSuppressed`), all of which breaks the moment
+   * the panel stops being a DOM descendant of its trigger. So this state
+   * feeds ONE thing and one thing only: which side the CONTENT enters and
+   * exits from. If it were ever wrong, the panels would still open, close,
+   * and be keyboard-reachable exactly as before -- only the slide direction
+   * would read oddly. That containment is the whole point.
+   *
+   * The morph itself comes for free: both panels are `fixed inset-x-0
+   * top-16` and share `DASHBOARD_CONTAINER`, so they occupy the identical
+   * screen box. Cross-fading them at the same rails, with the content
+   * sliding along the travel axis, is what sells "one panel that changed"
+   * instead of "one popover closed and another opened".
+   *
+   * `cur` = index of the trigger being hovered/focused now; `prev` = the one
+   * before it, and `null` on a fresh open (nothing to travel FROM, so the
+   * panel just does its existing downward settle with no horizontal move).
+   */
+  const [travel, setTravel] = useState<{
+    cur: number | null;
+    prev: number | null;
+  }>({
+    cur: null,
+    prev: null,
+  });
+
+  // Guard on `cur === index`: pointer moves fire mouseenter on the wrapper
+  // repeatedly, and without this every one of them would rewrite `prev` to
+  // the panel's own index and cancel its slide mid-flight.
+  const enterTrigger = (index: number) =>
+    setTravel((t) => (t.cur === index ? t : { cur: index, prev: t.cur }));
+
+  /*
+   * Returns the `key` + `initial`/`animate` x-offsets for panel `index`.
+   *
+   * THE `key` IS LOad-BEARING, and the reason this is Framer rather than a
+   * CSS transition. An ENTER animation needs the element to render at its
+   * start offset in one frame and its end offset in the next -- but hovering
+   * a trigger produces exactly ONE React commit, in which the panel's offset
+   * and its open state both change together. Measured: a CSS-transition
+   * version slid the OUTGOING panel correctly (0 -> -40px) while the
+   * incoming one sat at 0 the whole time, because it had no previous frame
+   * at 40px to travel from. Framer replays `initial` -> `animate` on mount,
+   * so changing the key remounts the wrapper and gives the enter its missing
+   * first frame. Both halves of the morph then fall out of one rule:
+   *   - entering: mounts on the side it travelled FROM, animates to 0
+   *   - exiting:  mounts at 0, animates out the OPPOSITE side
+   *
+   * The key only changes when this panel's ROLE changes (entering / exiting
+   * / idle), so pointer noise across the navbar does not remount anything,
+   * and a keyboard user tabbing INTO an already-open panel does not have the
+   * element ripped out from under their focus -- `enterTrigger` has already
+   * short-circuited by then, so no state change reaches here at all.
+   *
+   * Note there is no reset when the pointer leaves the navbar entirely. That
+   * was tried and removed: clearing `travel` mid-fade retargets the exiting
+   * panel to x:0, so it visibly snaps back to centre while fading out. The
+   * direction simply persists, which is also the more honest reading of the
+   * request -- it reflects the last real move made along the navbar.
+   */
+  const panelSlide = (index: number) => {
+    const OFFSET = 40;
+    if (travel.cur === index) {
+      if (travel.prev === null)
+        // Nothing to travel from: keep the existing fade + downward settle.
+        return { key: "enter-fresh", from: 0, to: 0 };
+      return {
+        key: `enter-from-${travel.prev}`,
+        from: travel.prev < index ? OFFSET : -OFFSET,
+        to: 0,
+      };
+    }
+    if (travel.prev === index && travel.cur !== null)
+      return {
+        key: `exit-to-${travel.cur}`,
+        from: 0,
+        to: travel.cur > index ? -OFFSET : OFFSET,
+      };
+    return { key: "idle", from: 0, to: 0 };
+  };
+
   // Close the mobile menu on route change. Adjusted during render (React's
   // recommended pattern for state that must reset when a prop changes)
   // rather than in an effect, which would cause an extra render pass.
@@ -254,6 +429,9 @@ export function Navbar() {
   if (pathname !== renderedPathname) {
     setRenderedPathname(pathname);
     setIsMobileMenuOpen(false);
+    // Reset here too, or an expanded section leaks across navigations and the
+    // drawer reopens already-expanded on an unrelated page.
+    setExpandedKey(null);
   }
 
   /**
@@ -341,7 +519,12 @@ export function Navbar() {
             href="/"
             className="focus-visible:ring-accent rounded-sm focus-visible:ring-2 focus-visible:outline-none"
           >
-            <Image src={favicon} alt="Lyftek" priority className="h-12 w-auto" />
+            <Image
+              src={favicon}
+              alt="Lyftek"
+              priority
+              className="h-12 w-auto"
+            />
           </Link>
 
           <nav
@@ -349,9 +532,10 @@ export function Navbar() {
             ref={navRef}
             className="relative hidden lg:flex lg:items-center lg:gap-8"
           >
-            {NAV_LINKS.map((link) => {
+            {NAV_LINKS.map((link, linkIndex) => {
               const active = isActiveLink(link.href);
               const dropdown = NAV_DROPDOWNS[link.href];
+              const slide = panelSlide(linkIndex);
 
               return (
                 // 2026-08-08: `dropdown ? "group/item" : undefined` -- a
@@ -376,7 +560,20 @@ export function Navbar() {
                   // rely on, whereas a fresh `mouseenter` is unambiguous
                   // intent to open the menu again.
                   onMouseEnter={
-                    dropdown ? () => setIsDropdownSuppressed(false) : undefined
+                    dropdown
+                      ? () => {
+                          setIsDropdownSuppressed(false);
+                          enterTrigger(linkIndex);
+                        }
+                      : undefined
+                  }
+                  // Keyboard users open the panel via `focus-within`, which
+                  // no mouse event ever sees -- without this, tabbing from
+                  // Services to Solutions would morph with no direction.
+                  // Capture phase because the focus lands on a descendant
+                  // link, and `focus` itself does not bubble.
+                  onFocusCapture={
+                    dropdown ? () => enterTrigger(linkIndex) : undefined
                   }
                 >
                   <Link
@@ -426,7 +623,7 @@ export function Navbar() {
                       <CaretUp
                         aria-hidden
                         size={12}
-                        className="shrink-0 rotate-180 transition-transform duration-200 ease-out group-hover/item:rotate-0 group-focus-within/item:rotate-0"
+                        className="shrink-0 rotate-180 transition-transform duration-200 ease-out group-focus-within/item:rotate-0 group-hover/item:rotate-0"
                       />
                     )}
                     {!active && (
@@ -517,20 +714,99 @@ export function Navbar() {
                     // `pointer-events-none` matters: without it the
                     // invisible panel would still swallow clicks aimed at
                     // the page underneath it.
+                    /*
+                     * THE HANDOVER (2026-08-11, measured). Two panels cross-
+                     * fading at the same rails means that mid-swap NEITHER is
+                     * fully opaque: measured 24.7% of the page showing
+                     * straight through the panel, hero headline and all. It
+                     * reads as a rendering glitch, not a transition.
+                     *
+                     * `delay-200` + `group-*:delay-0` is the whole fix: a
+                     * panel starts fading OUT 200ms after losing hover, but
+                     * fades IN the instant it gains it. On a swap the
+                     * incoming panel is therefore fully opaque before the
+                     * outgoing one has begun to disappear, and the page is
+                     * never visible between them. Re-measured: 0.0% bleed.
+                     *
+                     * IT HAS TO BE CSS, not JS. The first attempt scoped the
+                     * hold to "is this panel being replaced" -- state only JS
+                     * has -- and it made things much WORSE (24.7% -> 83.9%
+                     * bleed travelling left). `mouseenter` is a continuous
+                     * event, so React does not flush that setState before
+                     * paint the way it does for a click; the CSS hover flips
+                     * immediately and the class arrives a frame or more late,
+                     * mid-fade, retiming a transition already in flight. Any
+                     * fix that needs JS and CSS to agree WITHIN one frame
+                     * loses this race. This one needs no agreement at all --
+                     * both rules are pure CSS on the same element, so the
+                     * browser applies them in the same frame by construction.
+                     *
+                     * The 200ms lingering close is a bonus, not a cost: it is
+                     * the hover-intent grace period mega-menus normally have
+                     * to add on purpose, and it forgives a pointer that clips
+                     * the corner of the trigger on its way past.
+                     *
+                     * Excluded from the suppressed branch deliberately -- a
+                     * click on a panel link must still close it instantly
+                     * (that state's docblock records the original complaint:
+                     * "I have to tap somewhere random so that it would
+                     * disappear"). Expressed by OMITTING the delay classes
+                     * there rather than overriding them with `delay-0`:
+                     * same-specificity utilities are resolved by stylesheet
+                     * order, not by the order they appear in this list, and
+                     * Tailwind emits `delay-0` BEFORE `delay-200` -- so an
+                     * override would have silently lost and the click-close
+                     * would have kept the 200ms lag.
+                     */
                     <div
                       className={cn(
                         "invisible fixed inset-x-0 top-16 z-40 -translate-y-3 opacity-0 transition-all duration-300 ease-out",
                         isDropdownSuppressed
                           ? "pointer-events-none"
-                          : "group-hover/item:visible group-hover/item:translate-y-0 group-hover/item:opacity-100 group-focus-within/item:visible group-focus-within/item:translate-y-0 group-focus-within/item:opacity-100",
+                          : "delay-200 group-focus-within/item:visible group-focus-within/item:translate-y-0 group-focus-within/item:opacity-100 group-focus-within/item:delay-0 group-hover/item:visible group-hover/item:translate-y-0 group-hover/item:opacity-100 group-hover/item:delay-0",
                       )}
                     >
                       <div
-                        className={`bg-panel border-border border-t border-b border-x ${DASHBOARD_CONTAINER}`}
+                        // `overflow-hidden` is what makes the slide legible
+                        // rather than messy: the content wrapper below rests
+                        // 40px off to one side, and without clipping it would
+                        // poke out past this panel's own `border-x` rails --
+                        // the rails that are deliberately aligned to every
+                        // other section's on the page. Nothing inside needs
+                        // to escape the panel, so this costs nothing when the
+                        // panel is open and fully settled.
+                        className={`bg-panel border-border overflow-hidden border-x border-t border-b ${DASHBOARD_CONTAINER}`}
                       >
-                        {dropdown.kind === "services" ? (
-                          <div className="px-6 py-10 md:px-8 lg:p-12">
-                            {/*
+                        {/*
+                          The morphing half of the Stripe effect -- see
+                          `travel`/`panelSlide` above. The panel FRAME (rails,
+                          background, position) never moves; only its contents
+                          slide, which is exactly why the two panels read as
+                          one surface whose contents changed rather than as one
+                          popover closing and another opening.
+
+                          `duration: 0.28` against the frame's own
+                          `duration-300` fade: the contents land a touch before
+                          the fade finishes, so the panel reads as settling
+                          rather than still drifting once it's fully opaque.
+
+                          `x` IS a positional key, so the app's `MotionConfig
+                          reducedMotion="user"` already neutralises this for
+                          users who ask for reduced motion -- unlike the
+                          drawer's `height`, which had to be gated by hand.
+                        */}
+                        <motion.div
+                          key={slide.key}
+                          initial={{ x: slide.from }}
+                          animate={{ x: slide.to }}
+                          transition={{
+                            duration: 0.28,
+                            ease: [0.4, 0, 0.2, 1],
+                          }}
+                        >
+                          {dropdown.kind === "services" ? (
+                            <div className="px-6 py-10 md:px-8 lg:p-12">
+                              {/*
                               2026-08-08: eyebrow copy changed from "What We
                               Do" to "Our Services" per direct client
                               request -- this is the nav drawer's own label,
@@ -542,9 +818,9 @@ export function Navbar() {
                               tracked label) -- same eyebrow treatment every
                               other section on this site uses.
                             */}
-                            <SectionEyebrow>Our Services</SectionEyebrow>
+                              <SectionEyebrow>Our Services</SectionEyebrow>
 
-                            {/*
+                              {/*
                               2x4 grid, per direct client spec -- split into
                               two explicit column `<div>`s (4 items each)
                               rather than one 8-item `grid-cols-2` flow, so a
@@ -574,86 +850,86 @@ export function Navbar() {
                               services.ts) -- there's no further "more"
                               destination left to link to.
                             */}
-                            <div className="divide-border mt-8 grid grid-cols-2 divide-x">
-                              {[
-                                SERVICE_PILLARS.slice(0, 4),
-                                SERVICE_PILLARS.slice(4, 8),
-                              ].map((column, columnIndex) => (
-                                <div
-                                  key={columnIndex}
-                                  className={cn(
-                                    "flex flex-col gap-8",
-                                    columnIndex === 0 ? "pr-12" : "pl-12",
-                                  )}
-                                >
-                                  {column.map((service) => (
-                                    <Link
-                                      key={service.href}
-                                      href={service.href}
-                                      onClick={handleDropdownLinkClick}
-                                      className="group/service focus-visible:ring-accent -m-2 flex items-start gap-4 rounded-sm p-2 transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                                    >
-                                      <service.icon
-                                        aria-hidden
-                                        size={24}
-                                        weight="light"
-                                        className="text-accent mt-0.5 shrink-0"
-                                      />
-                                      <div className="flex flex-col gap-1">
-                                        <p className="font-rinter text-foreground group-hover/service:text-accent text-base tracking-tight transition-colors">
-                                          {service.label}
-                                        </p>
-                                        <p className="text-foreground-muted text-sm leading-snug">
-                                          {service.description}
-                                        </p>
-                                      </div>
-                                    </Link>
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          // REPLACED 2026-08-08: the "Coming soon" honest
-                          // placeholder this branch used to render is gone
-                          // -- the client supplied the real Solutions
-                          // catalog directly (`SOLUTION_CATEGORIES`,
-                          // constants/solutions.ts), so there's real content
-                          // to show now instead of an acknowledged gap.
-                          //
-                          // Two columns, one per category ("Enterprise /
-                          // Finance Solutions" / "Healthcare Solutions"),
-                          // same `divide-x` single-rule-between-columns
-                          // mechanism Services uses (see that branch's own
-                          // comment for why a plain `grid-cols-2` over the
-                          // flattened item list wouldn't give a clean single
-                          // divider). Unlike Services, each column here is a
-                          // labeled category with its own heading above a
-                          // plain vertical link list -- no icons/
-                          // descriptions were supplied for these items (13
-                          // across 2 categories, denser than Services' 8),
-                          // so this deliberately doesn't force the icon-grid
-                          // treatment onto content that wasn't given that
-                          // shape. Column heights differ (8 items vs. 5) --
-                          // left as-is rather than padded/balanced, since
-                          // that's the real shape of the two catalogs, not
-                          // a layout bug.
-                          <div className="px-6 py-10 md:px-8 lg:p-12">
-                            <SectionEyebrow>Our Solutions</SectionEyebrow>
-
-                            <div className="divide-border mt-8 grid grid-cols-1 gap-y-10 sm:grid-cols-2 sm:divide-x sm:gap-y-0">
-                              {SOLUTION_CATEGORIES.map(
-                                (category, columnIndex) => (
+                              <div className="divide-border mt-8 grid grid-cols-2 divide-x">
+                                {[
+                                  SERVICE_PILLARS.slice(0, 4),
+                                  SERVICE_PILLARS.slice(4, 8),
+                                ].map((column, columnIndex) => (
                                   <div
-                                    key={category.label}
+                                    key={columnIndex}
                                     className={cn(
-                                      "flex flex-col gap-4",
-                                      columnIndex === 0
-                                        ? "sm:pr-12"
-                                        : "sm:pl-12",
+                                      "flex flex-col gap-8",
+                                      columnIndex === 0 ? "pr-12" : "pl-12",
                                     )}
                                   >
-                                    {/*
+                                    {column.map((service) => (
+                                      <Link
+                                        key={service.href}
+                                        href={service.href}
+                                        onClick={handleDropdownLinkClick}
+                                        className="group/service focus-visible:ring-accent -m-2 flex items-start gap-4 rounded-sm p-2 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                                      >
+                                        <service.icon
+                                          aria-hidden
+                                          size={24}
+                                          weight="light"
+                                          className="text-accent mt-0.5 shrink-0"
+                                        />
+                                        <div className="flex flex-col gap-1">
+                                          <p className="font-rinter text-foreground group-hover/service:text-accent text-base tracking-tight transition-colors">
+                                            {service.label}
+                                          </p>
+                                          <p className="text-foreground-muted text-sm leading-snug">
+                                            {service.description}
+                                          </p>
+                                        </div>
+                                      </Link>
+                                    ))}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            // REPLACED 2026-08-08: the "Coming soon" honest
+                            // placeholder this branch used to render is gone
+                            // -- the client supplied the real Solutions
+                            // catalog directly (`SOLUTION_CATEGORIES`,
+                            // constants/solutions.ts), so there's real content
+                            // to show now instead of an acknowledged gap.
+                            //
+                            // Two columns, one per category ("Enterprise /
+                            // Finance Solutions" / "Healthcare Solutions"),
+                            // same `divide-x` single-rule-between-columns
+                            // mechanism Services uses (see that branch's own
+                            // comment for why a plain `grid-cols-2` over the
+                            // flattened item list wouldn't give a clean single
+                            // divider). Unlike Services, each column here is a
+                            // labeled category with its own heading above a
+                            // plain vertical link list -- no icons/
+                            // descriptions were supplied for these items (13
+                            // across 2 categories, denser than Services' 8),
+                            // so this deliberately doesn't force the icon-grid
+                            // treatment onto content that wasn't given that
+                            // shape. Column heights differ (8 items vs. 5) --
+                            // left as-is rather than padded/balanced, since
+                            // that's the real shape of the two catalogs, not
+                            // a layout bug.
+                            <div className="px-6 py-10 md:px-8 lg:p-12">
+                              <SectionEyebrow>Our Solutions</SectionEyebrow>
+
+                              <div className="divide-border mt-8 grid grid-cols-1 gap-y-10 sm:grid-cols-2 sm:gap-y-0 sm:divide-x">
+                                {SOLUTION_CATEGORIES.map(
+                                  (category, columnIndex) => (
+                                    <div
+                                      key={category.label}
+                                      className={cn(
+                                        "flex flex-col gap-4",
+                                        columnIndex === 0
+                                          ? "sm:pr-12"
+                                          : "sm:pl-12",
+                                      )}
+                                    >
+                                      {/*
                                       2026-08-08, direct client request:
                                       lime underline added under each
                                       category heading. `border-accent`
@@ -679,11 +955,11 @@ export function Navbar() {
                                       stretch so `inline-block` sizing
                                       actually applies.
                                     */}
-                                    <p className="font-rinter text-foreground border-accent inline-block self-start border-b-2 pb-2 text-base tracking-tight">
-                                      {category.label}
-                                    </p>
-                                    <ul className="flex flex-col gap-3">
-                                      {/*
+                                      <p className="font-rinter text-foreground border-accent inline-block self-start border-b-2 pb-2 text-base tracking-tight">
+                                        {category.label}
+                                      </p>
+                                      <ul className="flex flex-col gap-3">
+                                        {/*
                                         Keyed on `label`, NOT `href`
                                         (2026-08-10): href stopped being
                                         unique once the four Healthcare
@@ -699,24 +975,25 @@ export function Navbar() {
                                         here; the destination is incidental
                                         and already changed once.
                                       */}
-                                      {category.items.map((item) => (
-                                        <li key={item.label}>
-                                          <Link
-                                            href={item.href}
-                                            onClick={handleDropdownLinkClick}
-                                            className="group/solution focus-visible:ring-accent text-foreground-secondary hover:text-accent -m-2 block rounded-sm p-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                                          >
-                                            {item.label}
-                                          </Link>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                ),
-                              )}
+                                        {category.items.map((item) => (
+                                          <li key={item.label}>
+                                            <Link
+                                              href={item.href}
+                                              onClick={handleDropdownLinkClick}
+                                              className="group/solution focus-visible:ring-accent text-foreground-secondary hover:text-accent -m-2 block rounded-sm p-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                                            >
+                                              {item.label}
+                                            </Link>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  ),
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </motion.div>
                       </div>
                     </div>
                   )}
@@ -811,37 +1088,108 @@ export function Navbar() {
                   const children = !dropdown
                     ? []
                     : dropdown.kind === "services"
-                      ? SERVICE_PILLARS.map((p) => ({ label: p.label, href: p.href }))
+                      ? SERVICE_PILLARS.map((p) => ({
+                          label: p.label,
+                          href: p.href,
+                        }))
                       : SOLUTION_CATEGORIES.flatMap((c) => c.items);
+
+                  const sectionId = `mobile-sub-${link.href}`;
+                  const isExpanded = expandedKey === link.href;
 
                   return (
                     <div key={link.href} className="flex flex-col">
-                      <Link
-                        href={link.href}
-                        aria-current={isActiveLink(link.href) ? "page" : undefined}
-                        className={cn(
-                          "focus-visible:ring-accent font-martian-mono rounded-md px-3 py-2.5 text-base font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
-                          isActiveLink(link.href)
-                            ? "bg-surface text-foreground"
-                            : "text-foreground-secondary hover:bg-surface-hover hover:text-foreground",
-                        )}
-                      >
-                        {link.label}
-                      </Link>
+                      {/*
+                        The row is a LINK plus a SEPARATE chevron button, not
+                        one control doing both. "/solutions" and "/#services"
+                        are real destinations, so the label has to navigate;
+                        a single control cannot both navigate and stay put,
+                        and putting `aria-expanded` on the anchor would make
+                        it a link that doesn't link -- the classic trap.
+                      */}
+                      <div className="flex items-stretch gap-1">
+                        <Link
+                          href={link.href}
+                          aria-current={
+                            isActiveLink(link.href) ? "page" : undefined
+                          }
+                          className={cn(
+                            "focus-visible:ring-accent font-martian-mono flex-1 rounded-md px-3 py-2.5 text-base font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                            isActiveLink(link.href)
+                              ? "bg-surface text-foreground"
+                              : "text-foreground-secondary hover:bg-surface-hover hover:text-foreground",
+                          )}
+                        >
+                          {link.label}
+                        </Link>
 
+                        {children.length > 0 && (
+                          <button
+                            type="button"
+                            aria-expanded={isExpanded}
+                            aria-controls={sectionId}
+                            aria-label={`${isExpanded ? "Hide" : "Show"} ${link.label} sections`}
+                            onClick={() =>
+                              setExpandedKey((current) =>
+                                current === link.href ? null : link.href,
+                              )
+                            }
+                            className="focus-visible:ring-accent text-foreground-secondary hover:bg-surface-hover hover:text-foreground flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                          >
+                            <CaretUp
+                              aria-hidden
+                              size={14}
+                              weight="bold"
+                              className={cn(
+                                "transition-transform duration-200 ease-out",
+                                isExpanded ? "rotate-0" : "rotate-180",
+                              )}
+                            />
+                          </button>
+                        )}
+                      </div>
+
+                      {/*
+                        Kept MOUNTED and driven by `animate`, not wrapped in
+                        AnimatePresence: `height: "auto"` needs a measurable
+                        element, and `aria-controls` must point at a node that
+                        exists even while collapsed.
+                        `inert` is what actually removes the collapsed links
+                        from the tab order -- `height: 0` + `overflow-hidden`
+                        does NOT, so without it a keyboard user tabs into
+                        invisible content.
+                        Spacing lives in PADDING on the animated element, not
+                        margin: margins are outside the animated box, so they
+                        would not collapse and the row below would jump.
+                      */}
                       {children.length > 0 && (
-                        <ul className="border-panel-border mt-1 mb-2 ml-3 flex flex-col border-l pl-3">
-                          {children.map((child, index) => (
-                            <li key={`${child.href}-${index}`}>
-                              <Link
-                                href={child.href}
-                                className="focus-visible:ring-accent text-foreground-muted hover:text-foreground block rounded-md px-3 py-2.5 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        <motion.ul
+                          id={sectionId}
+                          inert={!isExpanded}
+                          initial={false}
+                          animate={isExpanded ? "expanded" : "collapsed"}
+                          variants={subListVariants}
+                          custom={prefersReducedMotion}
+                          className="overflow-hidden"
+                        >
+                          <div className="border-panel-border ml-3 flex flex-col border-l pt-1 pb-2 pl-3">
+                            {children.map((child, index) => (
+                              <motion.li
+                                key={`${child.href}-${index}`}
+                                variants={subItemVariants}
+                                custom={prefersReducedMotion}
+                                className="list-none"
                               >
-                                {child.label}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
+                                <Link
+                                  href={child.href}
+                                  className="focus-visible:ring-accent text-foreground-muted hover:text-foreground block rounded-md px-3 py-2.5 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                                >
+                                  {child.label}
+                                </Link>
+                              </motion.li>
+                            ))}
+                          </div>
+                        </motion.ul>
                       )}
                     </div>
                   );

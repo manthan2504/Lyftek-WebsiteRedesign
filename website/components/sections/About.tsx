@@ -171,7 +171,7 @@ export function About() {
             here would just trigger the browser's synthetic-bold fallback
             instead of an actually-designed bold cut.
           */}
-          <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl xl:text-5xl">
+          <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl">
             An enterprise technology partner, not another vendor to manage.
           </h2>
           <p className="text-foreground-secondary mt-6 text-lg leading-relaxed">
@@ -401,41 +401,48 @@ export function About() {
                 shrinks to fit the box's own actual width instead of
                 overflowing it.
               */}
-              <div className="relative mt-32 mr-6 h-full w-full max-w-[460px] shrink-0">
+              {/*
+                `w-[calc(100%-1.5rem)]` below `lg`, not `w-full`: `w-full` is
+                100% of the flex line's content width, and the `mr-6` on top
+                of it made this item 24px WIDER than the line. With
+                `justify-end` the surplus was pushed out the LEFT -- past the
+                `anchor="top-left"` corner that exists specifically to keep
+                the avatar/role/subject readable. Measured at 320-768px the
+                avatar and envelope icon were 100% clipped and the message
+                lost its first ~30px. `lg:w-full` restores today's exact
+                value at >=1025, so desktop is untouched.
+
+                `--cs-card-w` carries a responsive width into CardSwap, whose
+                `width` prop lands in inline styles and so cannot itself read
+                a media query.
+              */}
+              <div className="relative mt-32 mr-6 h-full w-[calc(100%-1.5rem)] max-w-[460px] shrink-0 [--cs-card-w:100%] lg:w-full lg:[--cs-card-w:560px]">
                 <CardSwap
                   /*
-                   * `min(560px, 100%)`, not a fixed 560. Revision #9 above
-                   * settled that cropping the card's right/bottom is FINE --
-                   * but explicitly conditional on "the CORE content (avatar,
-                   * role, subject, message) stays fully visible". Below `lg`
-                   * that condition was being broken: `CardSwap`'s anchor
-                   * classes carried `max-[768px]:scale-[0.75]` and
-                   * `max-[480px]:scale-[0.55]`, which shrink the whole card
-                   * including its type -- the 12px body rendered at ~6.6px
-                   * effective at 320px. Legally "visible", not readable.
+                   * Driven by `--cs-card-w` on the wrapper above: `560px` at
+                   * `lg:`+ (byte-identical to the fixed 560 this used to
+                   * pass) and `100%` below it.
                    *
-                   * Sizing to the container instead of scaling keeps the type
-                   * at its real size at every width.
+                   * `100%` and not an overrun value, because CardSwap applies
+                   * this same `width` to BOTH the stack container and every
+                   * Card. A percentage therefore compounds -- an earlier
+                   * `122%` resolved to 1.22 * 1.22 = 1.49x the wrapper, and
+                   * since cards are centred (`left-1/2` + GSAP
+                   * `xPercent:-50`) half of that surplus hung off the LEFT,
+                   * hiding the avatar entirely at 320-768px. At `100%` the
+                   * card's left edge lands exactly on the container's, which
+                   * is the `anchor="top-left"` corner revision #9 requires
+                   * to stay readable.
                    *
-                   * `122%` is deliberate, not `100%`: the card is SUPPOSED to
-                   * overrun its `max-w-[460px]` wrapper -- 560 into 460 is
-                   * exactly the "right/bottom decorative crop" revision #9
-                   * signed off, so sizing flush to the wrapper would delete
-                   * the effect. 122% reproduces that same ~22% overrun at
-                   * every width, and since the wrapper is 460 at `lg:`+,
-                   * 460 * 1.22 = 561 clamps to the 560 cap -- desktop renders
-                   * byte-identically to the old fixed 560.
+                   * The decorative right/bottom crop is unaffected: it comes
+                   * from the box's `overflow-hidden` plus the stack's own
+                   * offsets, not from the card overrunning its wrapper.
                    *
-                   * Percentages resolve against this wrapper, not the
-                   * viewport, so it stays correct in the two-column `lg`
-                   * layout where the column is narrower than the page.
-                   *
-                   * Skew compensation still holds: the docblock's
-                   * (width/2)*tan(4deg) is 19.6px at 560 against `mt-6`
-                   * (24px); a NARROWER card only shrinks that offset, so the
-                   * buffer grows rather than shrinks.
+                   * Skew compensation still holds: (width/2)*tan(4deg) is
+                   * 19.6px at 560 against `mt-6` (24px); a narrower card only
+                   * shrinks that offset, so the buffer grows.
                    */
-                  width="min(560px, 122%)"
+                  width="var(--cs-card-w)"
                   height={440}
                   cardDistance={50}
                   verticalDistance={56}

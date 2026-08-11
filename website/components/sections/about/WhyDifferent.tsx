@@ -98,7 +98,7 @@ export function WhyDifferent() {
           // top of every child's own `mt-*`, making this section's spacing
           // rhythm 24px/32px against 16px/24px everywhere else. Same fix as
           // WhyLyftek.tsx, the only other section that had it.
-          className={`flex flex-col px-6 py-12 md:px-8 md:py-24 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
+          className={`flex flex-col px-6 py-12 md:px-8 md:py-16 lg:py-24 ${PANEL_CONTAINER_NESTED}`}
         >
           <SectionEyebrow>Our Approach</SectionEyebrow>
 
@@ -106,7 +106,7 @@ export function WhyDifferent() {
             2026-08-10: `lg:text-4xl` -> `sm:text-4xl`, matching every other
             section H2's breakpoint (see WhyLyftek.tsx for the full note).
           */}
-          <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl xl:text-5xl">
+          <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl">
             Why we&apos;re different.
           </h2>
 

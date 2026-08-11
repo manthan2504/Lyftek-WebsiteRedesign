@@ -114,7 +114,7 @@ export function ContactCTA() {
               eyebrow->heading step is tighter than heading->body, matching
               how every other section paces this same three-line rhythm.
             */}
-            <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl xl:text-5xl">
+            <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl">
               Let&apos;s build something together.
             </h2>
             <p className="text-foreground-secondary mt-6 max-w-md text-lg leading-relaxed">

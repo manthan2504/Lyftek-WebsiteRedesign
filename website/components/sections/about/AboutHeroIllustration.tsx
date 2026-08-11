@@ -19,29 +19,20 @@ import type { SVGProps } from "react";
  * `stroke`, no indirection needed since the source is stroke art, not
  * filled regions.
  *
- * CROPPED TO THE INK (2026-08-11, responsive pass). The source viewBox was
- * `0 0 1366 1151`, but the drawn bounding box is only x 240->1209, y 43->1026
- * -- 397 units of dead canvas horizontally (29%) and 168 vertically. The
- * artwork was therefore rendering ~29% smaller than its box at every
- * viewport. `viewBox="230 33 989 1003"` (10 units of padding retained around
- * the ink, clear of the stroke halo) recovers that for free: 1.38x larger at
- * identical CSS width, and an aspect ratio of 0.99 instead of 1.19, which
- * suits a stacked mobile column far better than the old letterbox.
- *
- * NO PATH GEOMETRY IS TOUCHED -- this is a window change, not a reshape. That
- * distinction matters given the client's standing "don't reshape it" ruling.
- *
- * `vectorEffect="non-scaling-stroke"` with `strokeWidth={1}` pins the stroke
- * to 1 CSS px at ANY rendered size. Without it the stroke scales with the
- * box: at a 288px-wide mobile column the old 1.6 unit stroke resolves to
- * ~0.3px, under the antialiasing floor, and the whole drawing greys out to a
- * smudge. This is what makes the illustration legible at 320px, which the
- * client's "visible at every viewport" rule requires.
+ * DO NOT CHANGE `viewBox` OR `strokeWidth` TO SOLVE A RESPONSIVE PROBLEM.
+ * `viewBox` is not a CSS property -- it cannot be media-queried, so any edit
+ * to it rescales the drawing at EVERY width, desktop included. A 2026-08-11
+ * pass cropped it to the ink (`230 33 989 1003`) to win back 29% of dead
+ * canvas; that is a 1366/989 = 1.38x enlargement everywhere, and the client
+ * flagged the desktop illustration as "looking big for me now, not as
+ * previous". Reverted. Desktop rendering here is frozen -- see the memory
+ * note `desktop-design-is-frozen`. If the artwork needs to be larger at
+ * small viewports, do it in CSS at the call site, scoped `max-*:`.
  */
 export function AboutHeroIllustration(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
-      viewBox="230 33 989 1003"
+      viewBox="0 0 1366 1151"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       {...props}
@@ -49,10 +40,9 @@ export function AboutHeroIllustration(props: SVGProps<SVGSVGElement>) {
       <g
         fill="none"
         stroke="currentColor"
-        strokeWidth={1}
+        strokeWidth={1.6}
         strokeLinecap="round"
         strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
       >
       <path d="M 623.00 1015.00 L 625.00 1014.00 L 627.00 1016.00 L 630.00 1017.00 L 637.00 1017.00 L 639.00 1016.00 L 641.00 1018.00 L 641.00 1022.00 L 640.00 1023.00 L 632.00 1023.00 L 627.00 1021.00 L 623.00 1016.00" />
       <path d="M 642.00 1007.00 L 643.00 1006.00 L 646.00 1009.00 L 649.00 1010.00 L 652.00 1010.00 L 658.00 1007.00 L 662.00 1011.00 L 662.00 1013.00 L 659.00 1015.00 L 652.00 1015.00 L 647.00 1013.00 L 642.00 1008.00" />

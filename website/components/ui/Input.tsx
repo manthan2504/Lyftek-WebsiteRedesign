@@ -52,7 +52,7 @@ export function Input({
       <input
         id={inputId}
         className={cn(
-          "bg-surface border-border text-foreground placeholder:text-foreground-muted w-full rounded-sm border px-4 py-2.5 text-base transition-colors outline-none",
+          "bg-surface border-border text-foreground placeholder:text-foreground-muted w-full rounded-sm border px-4 py-2.5 text-sm transition-colors outline-none pointer-coarse:text-base",
           "focus-visible:border-accent focus-visible:ring-accent focus-visible:ring-2 focus-visible:ring-offset-0",
           error && "border-error",
         )}
@@ -61,7 +61,7 @@ export function Input({
         {...props}
       />
       {error && (
-        <p id={`${inputId}-error`} className="text-error text-sm">
+        <p id={`${inputId}-error`} className="text-error text-xs">
           {error}
         </p>
       )}

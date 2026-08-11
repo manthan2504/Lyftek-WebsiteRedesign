@@ -76,7 +76,98 @@ void main() {
 }
 `;
 
-const fragmentShader = `
+/**
+ * RESPONSIVE BANDS (2026-08-11).
+ *
+ * THE PROBLEM, measured rather than guessed: this shader's wavelength is
+ * NORMALISED (the Perlin input is `st.x`, 0..1, times a fixed 2.5/3.5, so it
+ * always draws ~2.5 crests across the frame however narrow the frame gets),
+ * while its amplitude is a fraction of canvas HEIGHT. So the single number
+ * that governs how the wave READS is steepness = amplitude_px / wavelength_px,
+ * which reduces to ~0.6875 * height/width. On the approved 1374x836 desktop
+ * canvas that is 0.42. On a 286x656 phone canvas it is 1.58 -- the same
+ * gesture drawn 3.8x steeper, which is why it stops looking like a wave and
+ * turns into a crosshatch mesh sitting on the copy.
+ *
+ * KEYED ON ASPECT RATIO, NOT VIEWPORT WIDTH. That is the important part. A
+ * landscape phone (667x375 -> canvas aspect 1.42) already renders correctly
+ * and measures 1.15x desktop steepness; banding purely on viewport width
+ * would "fix" it into something worse. Everything below is driven by the
+ * canvas's own aspect, so landscape phones and landscape tablets fall out at
+ * ~desktop values automatically.
+ *
+ * WHY GLSL LITERALS AND NOT UNIFORMS -- this was tried and measured, do not
+ * "simplify" it back:
+ *  - `u_line_count` is a `for` bound; GLSL ES 1.0 requires a constant
+ *    expression there, and the `if (i >= uCount) break;` workaround defeats
+ *    the loop unrolling that the GPU saving actually comes from.
+ *  - Making the widths uniforms changed 2-7 pixels per frame by 1/255 at
+ *    desktop sizes (constant folding replaced by a runtime divide). Harmless
+ *    to look at, but it breaks a hard byte-identity requirement for no gain.
+ * Baked as literals, `bandFor()` returns DESKTOP_BAND above 1024px and the
+ * generated source string is then CHARACTER-IDENTICAL to the pre-change
+ * shader -- so the frozen desktop/laptop rendering is identical by
+ * construction.
+ */
+type ThreadsBand = {
+  lineCount: number;
+  lineWidth: string;
+  lineBlur: string;
+  freqA: string;
+  freqB: string;
+  centerY: string;
+  amplitudeScale: number;
+};
+
+/** Verbatim pre-2026-08-11 values. Emits the original shader source exactly. */
+const DESKTOP_BAND: ThreadsBand = {
+  lineCount: 40,
+  lineWidth: "10.0",
+  lineBlur: "10.0",
+  freqA: "2.5",
+  freqB: "3.5",
+  centerY: "0.5",
+  amplitudeScale: 1,
+};
+
+/**
+ * `aspect` is the CANVAS's width/height, not the viewport's.
+ *
+ * Quantised to 0.05 so the compiled-program cache stays small (a resize drag
+ * would otherwise recompile every tick). Values are chosen so that a desktop
+ * aspect of ~1.64 lands exactly on DESKTOP_BAND's numbers, making the ramp
+ * continuous across the freeze boundary rather than a visible step.
+ */
+function bandFor(viewportWidth: number, aspect: number): ThreadsBand {
+  // Hard gate: the client's laptop/desktop bands are frozen. Never compute.
+  if (viewportWidth >= 1025) return DESKTOP_BAND;
+
+  const q = Math.round(Math.min(Math.max(aspect, 0.35), 1.7) / 0.05) * 0.05;
+
+  // Restores desktop steepness: freq ~= 0.608 * aspect makes wavelength grow
+  // as the canvas narrows, so amplitude_px / wavelength_px stays ~0.42.
+  const freq = Math.min(Math.max(0.608 * q, 0.25), 1);
+  // 0 for anything landscape-ish (leave it alone), ramping to 1 as the canvas
+  // goes strongly portrait. Drives the "quieten it" levers only.
+  const p = Math.min(Math.max((1.2 - q) / 0.8, 0), 1);
+
+  return {
+    lineCount: Math.round(40 - 16 * p), // 40 -> 24: fewer strands to mat together (and ~38% less fragment work)
+    lineWidth: (10 - 3 * p).toFixed(2), // thinner as the band shrinks, so thickness/band-span stays constant
+    lineBlur: (10 - 3 * p).toFixed(2),
+    freqA: (2.5 * freq).toFixed(4),
+    freqB: (3.5 * freq).toFixed(4),
+    // GL uv has y=0 at the BOTTOM, so a smaller value sinks the band. On a
+    // portrait canvas the text block is vertically centred and so is the
+    // wave, which guarantees they collide -- measured as a WCAG AA failure
+    // on the body paragraph (2.3:1 where the crest crosses a glyph). This
+    // drops the band into the empty space beneath the CTA instead.
+    centerY: (0.5 - 0.22 * p).toFixed(4),
+    amplitudeScale: 1 - 0.35 * p, // shrinks the band away from the body copy
+  };
+}
+
+const buildFragmentShader = (band: ThreadsBand) => `
 precision highp float;
 
 uniform float iTime;
@@ -88,9 +179,9 @@ uniform vec2 uMouse;
 
 #define PI 3.1415926538
 
-const int u_line_count = 40;
-const float u_line_width = 10.0; // was 7.0 -- client asked for slightly thicker wavy lines
-const float u_line_blur = 10.0;
+const int u_line_count = ${band.lineCount};
+const float u_line_width = ${band.lineWidth}; // was 7.0 -- client asked for slightly thicker wavy lines
+const float u_line_blur = ${band.lineBlur};
 
 float Perlin2D(vec2 P) {
     vec2 Pi = floor(P);
@@ -130,12 +221,12 @@ float lineFn(vec2 st, float width, float perc, float offset, vec2 mouse, float t
     float blur = smoothstep(split_point, split_point + 0.05, st.x) * perc;
 
     float xnoise = mix(
-        Perlin2D(vec2(time_scaled, st.x + perc) * 2.5),
-        Perlin2D(vec2(time_scaled, st.x + time_scaled) * 3.5) / 1.5,
+        Perlin2D(vec2(time_scaled, st.x + perc) * ${band.freqA}),
+        Perlin2D(vec2(time_scaled, st.x + time_scaled) * ${band.freqB}) / 1.5,
         st.x * 0.3
     );
 
-    float y = 0.5 + (perc - 0.5) * distance + xnoise / 2.0 * finalAmplitude;
+    float y = ${band.centerY} + (perc - 0.5) * distance + xnoise / 2.0 * finalAmplitude;
 
     float line_start = smoothstep(
         y + (width / 2.0) + (u_line_blur * pixel(1.0, iResolution.xy) * blur),
@@ -230,26 +321,46 @@ export function Threads({
     container.appendChild(gl.canvas);
 
     const geometry = new Triangle(gl);
-    const program = new Program(gl, {
-      vertex: vertexShader,
-      fragment: fragmentShader,
-      uniforms: {
-        iTime: { value: 0 },
-        iResolution: {
-          value: new Color(
-            gl.canvas.width,
-            gl.canvas.height,
-            gl.canvas.width / gl.canvas.height,
-          ),
-        },
-        uColor: { value: new Color(...propsRef.current.color) },
-        uAmplitude: { value: propsRef.current.amplitude },
-        uDistance: { value: propsRef.current.distance },
-        uMouse: { value: new Float32Array([0.5, 0.5]) },
-      },
-    });
 
-    const mesh = new Mesh(gl, { geometry, program });
+    /*
+     * ONE uniform object, shared by every band's program. OGL only reads
+     * `.value` off these at draw time, so swapping which program the mesh
+     * points at carries the live uniform state across untouched -- no
+     * re-syncing and no frame of stale values at a breakpoint.
+     */
+    const uniforms = {
+      iTime: { value: 0 },
+      iResolution: {
+        value: new Color(
+          gl.canvas.width,
+          gl.canvas.height,
+          gl.canvas.width / gl.canvas.height,
+        ),
+      },
+      uColor: { value: new Color(...propsRef.current.color) },
+      uAmplitude: { value: propsRef.current.amplitude },
+      uDistance: { value: propsRef.current.distance },
+      uMouse: { value: new Float32Array([0.5, 0.5]) },
+    };
+
+    /*
+     * Compiled lazily and cached per band, keyed on the generated source, so
+     * crossing an aspect step costs one compile the first time and nothing
+     * after. The WebGL CONTEXT is never recreated -- that stays mount-once.
+     */
+    const programCache = new Map<string, Program>();
+    function programFor(b: ThreadsBand): Program {
+      const src = buildFragmentShader(b);
+      let p = programCache.get(src);
+      if (!p) {
+        p = new Program(gl, { vertex: vertexShader, fragment: src, uniforms });
+        programCache.set(src, p);
+      }
+      return p;
+    }
+
+    let band = DESKTOP_BAND;
+    const mesh = new Mesh(gl, { geometry, program: programFor(band) });
 
     // Assigned further down, only on the non-animating path. Declared here
     // because `resize` has to be able to call it: with no render loop
@@ -268,10 +379,27 @@ export function Threads({
           : baseDpr;
       renderer.dpr = dpr;
       renderer.setSize(clientWidth, clientHeight);
-      program.uniforms.iResolution.value.r = gl.canvas.width;
-      program.uniforms.iResolution.value.g = gl.canvas.height;
-      program.uniforms.iResolution.value.b =
-        gl.canvas.width / gl.canvas.height;
+      uniforms.iResolution.value.r = gl.canvas.width;
+      uniforms.iResolution.value.g = gl.canvas.height;
+      uniforms.iResolution.value.b = gl.canvas.width / gl.canvas.height;
+
+      /*
+       * The ONLY place the responsive band is decided, and it runs inside the
+       * mount effect -- i.e. client-only, never during render. That is why
+       * this needs no hydration gate of its own and why Hero.tsx is
+       * untouched: none of this is markup, so it cannot disagree with the
+       * server. Aspect is taken from the CSS box, not the backing store, so
+       * the DPR clamp above doesn't skew it.
+       */
+      const nextBand = bandFor(
+        window.innerWidth,
+        clientHeight > 0 ? clientWidth / clientHeight : 1.64,
+      );
+      if (nextBand !== band) {
+        band = nextBand;
+        mesh.program = programFor(band);
+      }
+
       staticRender?.();
     }
 
@@ -310,21 +438,24 @@ export function Threads({
     function renderFrame(time: number, trackMouse: boolean) {
       const { color, amplitude, distance } = propsRef.current;
 
-      program.uniforms.uColor.value.set(...color);
-      program.uniforms.uAmplitude.value = amplitude;
-      program.uniforms.uDistance.value = distance;
+      uniforms.uColor.value.set(...color);
+      // The prop stays the artistic intent (1.1); the band supplies the
+      // viewport correction. Applied here because this line already runs
+      // every frame and would otherwise clobber a value set in resize().
+      uniforms.uAmplitude.value = amplitude * band.amplitudeScale;
+      uniforms.uDistance.value = distance;
 
       if (trackMouse) {
         const smoothing = 0.05;
         currentMouse[0] += smoothing * (targetMouse[0] - currentMouse[0]);
         currentMouse[1] += smoothing * (targetMouse[1] - currentMouse[1]);
-        program.uniforms.uMouse.value[0] = currentMouse[0];
-        program.uniforms.uMouse.value[1] = currentMouse[1];
+        uniforms.uMouse.value[0] = currentMouse[0];
+        uniforms.uMouse.value[1] = currentMouse[1];
       } else {
-        program.uniforms.uMouse.value[0] = 0.5;
-        program.uniforms.uMouse.value[1] = 0.5;
+        uniforms.uMouse.value[0] = 0.5;
+        uniforms.uMouse.value[1] = 0.5;
       }
-      program.uniforms.iTime.value = time;
+      uniforms.iTime.value = time;
 
       renderer.render({ scene: mesh });
     }

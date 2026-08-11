@@ -166,23 +166,16 @@ export function AboutHero() {
             real copy and has to stay in the accessibility tree.
           */}
           {/*
-            Below `lg` this stacks under the copy and the ARTWORK bleeds to
-            the panel's border rails: `-mx-6 md:-mx-8` exactly cancels the
-            ancestor's `px-6 md:px-8`, buying 48px of width at 320px (240 ->
-            288, +20%) -- the cheapest width win available to a drawing this
-            detailed, and touching the rails reads as deliberate full-bleed
-            art. No page overflow results: the item's edges land on the
-            container's border box, and grid-cols-1's `1fr` track is not
-            content-sized.
-
-            `justify-self-center` is deferred to `lg:` -- below that the grid
-            item must stretch, or the negative margins fight a shrink-to-fit
-            box. No `max-w` below `lg` either: at 768 the drawing should have
-            all ~656px, not 512.
+            Below `lg` this stacks under the copy. It stays on the normal
+            gutter grid -- NOT full-bled. An earlier pass used
+            `-mx-6 md:-mx-8` to cancel the ancestor's padding and win 48px of
+            width at 320; that put the artwork 4px from the panel's border
+            rails, and the client's ruling is that it must not touch or come
+            close to them.
           */}
           <motion.div
             variants={item}
-            className="-mx-6 flex flex-col md:-mx-8 lg:mx-0 lg:w-full lg:max-w-lg lg:justify-self-center xl:max-w-xl"
+            className="flex w-full flex-col lg:max-w-lg lg:justify-self-center xl:max-w-xl"
           >
             {/*
               Client line: "Every project we take on is designed for
@@ -199,11 +192,7 @@ export function AboutHero() {
               body paragraph in hierarchy and earn its emphasis from brand
               colour instead of scale.
             */}
-            {/*
-              Re-inset off the artwork's full bleed -- only the drawing bleeds
-              to the rails, text stays on the gutter grid.
-            */}
-            <p className="text-accent max-w-md px-6 text-base leading-relaxed md:px-8 lg:px-0">
+            <p className="text-accent max-w-md text-base leading-relaxed">
               Every project we take on is built for years, not quarters.
             </p>
 
@@ -213,9 +202,28 @@ export function AboutHero() {
               the box gap understates the gap you actually see. 24px of margin
               still leaves ~40px of visual clearance under the statement.
             */}
+            {/*
+              `lg:max-w-none` is LOAD-BEARING, not tidiness: without it the
+              `md:max-w-lg` cap would cascade up into `xl` and clamp the
+              576px desktop illustration to 512px. Desktop must compute to
+              `max-width: none`, which is what it was before any responsive
+              work.
+              `xs:max-w-md md:max-w-lg` only caps the SMALL end, so the
+              drawing keeps a comfortable inset from the panel rails instead
+              of running the full column width.
+
+              The stroke bump is scoped `max-sm:` (<640px) and targets
+              `path`, not the `<g>`: `vector-effect` does NOT inherit, so an
+              earlier attempt that set it on the `<g>` was a silent no-op and
+              never actually fixed mobile legibility. At 320 the natural
+              stroke is 1.6 * 238/1366 = 0.28px, under the antialias floor,
+              so the drawing greys out; 0.7px pins it just above the 0.487px
+              the frozen desktop already renders at 1025, so it reads without
+              looking heavier than the desktop original.
+            */}
             <AboutHeroIllustration
               aria-hidden
-              className="text-foreground mx-auto mt-6 h-auto w-full"
+              className="text-foreground xs:max-w-md mx-auto mt-6 h-auto w-full md:max-w-lg lg:max-w-none max-sm:[&_path]:[vector-effect:non-scaling-stroke] max-sm:[&_path]:[stroke-width:0.7]"
             />
           </motion.div>
         </motion.div>

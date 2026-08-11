@@ -167,7 +167,7 @@ export function Select({
             // elements don't reliably get the hand cursor from browser
             // defaults alone (Firefox in particular defaults buttons to
             // the plain arrow), so this shouldn't be left implicit.
-            "bg-surface border-border text-foreground flex w-full cursor-pointer items-start justify-between gap-2 rounded-sm border px-4 py-2.5 text-left text-base transition-colors outline-none",
+            "bg-surface border-border text-foreground flex w-full cursor-pointer items-start justify-between gap-2 rounded-sm border px-4 py-2.5 text-left text-sm transition-colors outline-none pointer-coarse:text-base",
             "focus-visible:border-accent focus-visible:ring-accent focus-visible:ring-2 focus-visible:ring-offset-0",
             !selected && "text-foreground-muted",
             error && "border-error",
@@ -206,7 +206,7 @@ export function Select({
                   onClick={() => selectOption(index)}
                   onMouseEnter={() => setActiveIndex(index)}
                   className={cn(
-                    "flex cursor-pointer items-start justify-between gap-2 px-4 py-3 text-base transition-colors",
+                    "flex cursor-pointer items-start justify-between gap-2 px-4 py-2 text-sm transition-colors pointer-coarse:py-3 pointer-coarse:text-base",
                     index === activeIndex
                       ? "bg-surface-hover text-foreground"
                       : "text-foreground-secondary",
@@ -226,7 +226,7 @@ export function Select({
       </div>
       <input type="hidden" name={name} value={value} required={required} />
       {error && (
-        <p id={`${buttonId}-error`} className="text-error text-sm">
+        <p id={`${buttonId}-error`} className="text-error text-xs">
           {error}
         </p>
       )}

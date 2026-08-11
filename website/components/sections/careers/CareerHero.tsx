@@ -44,7 +44,7 @@ export function CareerHero({ opening }: { opening: CareerOpening }) {
           <motion.div variants={item}>
             <Link
               href="/careers"
-              className="text-foreground-muted hover:text-foreground focus-visible:ring-accent group -mx-2 -my-3 inline-flex items-center gap-2 rounded-sm px-2 py-3 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+              className="text-foreground-muted hover:text-foreground focus-visible:ring-accent group inline-flex items-center gap-2 rounded-sm text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none pointer-coarse:-mx-2 pointer-coarse:-my-3 pointer-coarse:px-2 pointer-coarse:py-3"
             >
               <ArrowLeft
                 aria-hidden

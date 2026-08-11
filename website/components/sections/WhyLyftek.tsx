@@ -274,7 +274,7 @@ export function WhyLyftek() {
           // margins looked identical to the other sections in the source
           // while rendering differently. Same fix applied to
           // WhyDifferent.tsx, the only other section with this parent gap.
-          className={`flex flex-col px-6 py-12 md:px-8 md:py-24 lg:py-32 ${PANEL_CONTAINER_NESTED}`}
+          className={`flex flex-col px-6 py-12 md:px-8 md:py-16 lg:py-24 ${PANEL_CONTAINER_NESTED}`}
         >
           <SectionEyebrow>Why Lyftek</SectionEyebrow>
 
@@ -288,7 +288,7 @@ export function WhyLyftek() {
             36px on the same page -- headings visibly stepping up and down
             while scrolling at tablet widths.
           */}
-          <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl xl:text-5xl">
+          <h2 className="font-rinter text-foreground mt-4 text-3xl tracking-tight sm:text-4xl">
             Built on expertise, proven with clients.
           </h2>
 

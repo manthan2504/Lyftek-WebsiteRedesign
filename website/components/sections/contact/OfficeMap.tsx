@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { DASHBOARD_CONTAINER } from "@/constants/layout";
 import { OFFICE_MAP_EMBED_URL } from "@/constants/contact";
@@ -76,6 +76,28 @@ const fadeUp = {
  */
 export function OfficeMap() {
   const [mapActive, setMapActive] = useState(false);
+  /*
+   * The tap-to-activate overlay exists ONLY for touch. Google's cross-origin
+   * embed swallows touch pan, so on a phone a finger landing on the map can't
+   * scroll the page past it. A mouse has no such problem -- and desktop
+   * rendering is frozen, so the overlay must not add a node there at all.
+   *
+   * Detected in an effect rather than at render so server and first client
+   * render agree (a `matchMedia` read during render would hydrate-mismatch).
+   * Until it resolves, `isTouch` is false -- i.e. the desktop/no-overlay
+   * path, which is also the correct fallback for any browser without
+   * pointer-media support.
+   */
+  const [isTouch, setIsTouch] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(pointer: coarse)");
+    const sync = () => setIsTouch(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  const showOverlay = isTouch && !mapActive;
 
   return (
     <section className="bg-background" aria-labelledby="office-map-heading">
@@ -103,7 +125,7 @@ export function OfficeMap() {
             referrerPolicy="no-referrer-when-downgrade"
             className={cn(
               "h-full w-full grayscale invert-[0.92] contrast-[0.9]",
-              !mapActive && "pointer-events-none",
+              showOverlay && "pointer-events-none",
             )}
             style={{ border: 0 }}
           />
@@ -115,13 +137,15 @@ export function OfficeMap() {
             across an origin boundary, so the only real fix is to leave the
             iframe inert until an explicit tap activates it.
 
-            Rendered unconditionally, NOT `md:hidden`: a display-hidden
-            overlay would leave the iframe permanently `pointer-events-none`
-            on desktop, i.e. a dead map. No content is hidden either way --
-            the map still renders, and the address plus a directions link
-            already sit above it in ContactSection.
+            Gated on `isTouch` in JS rather than a CSS `md:hidden`, for two
+            reasons: a display-hidden overlay would still be a DOM node at
+            desktop (desktop rendering is frozen), and it would leave the
+            iframe permanently `pointer-events-none` there -- a dead map.
+            No content is hidden either way: the map still renders, and the
+            address plus a directions link already sit above it in
+            ContactSection.
           */}
-          {!mapActive && (
+          {showOverlay && (
             <button
               type="button"
               onClick={() => setMapActive(true)}
